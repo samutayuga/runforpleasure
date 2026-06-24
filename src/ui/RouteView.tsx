@@ -34,14 +34,14 @@ export function RouteView({
   return (
     <View accessibilityLabel="Route map" style={{ width: size, height: size }}>
       <Svg width={size} height={size}>
-        {/* 1. Full grey route */}
-        <Polyline points={polyline} fill="none" stroke="#CBD5E1" strokeWidth={3} />
-        {/* 2. Orange passed trail */}
+        {/* 1. Full route */}
+        <Polyline points={polyline} fill="none" stroke="#94A3B8" strokeWidth={3} />
+        {/* 2. Passed trail (bright orange) */}
         {passedPolyline !== null && (
-          <Polyline points={passedPolyline} fill="none" stroke="#EA580C" strokeWidth={4} />
+          <Polyline points={passedPolyline} fill="none" stroke="#FB923C" strokeWidth={4} />
         )}
         {/* 3. Marker on top */}
-        <Circle cx={marker.x} cy={marker.y} r={7} fill={markerColor} stroke="#fff" strokeWidth={2} />
+        <Circle cx={marker.x} cy={marker.y} r={7} fill={markerColor} stroke="#F8FAFC" strokeWidth={2} />
       </Svg>
     </View>
   );

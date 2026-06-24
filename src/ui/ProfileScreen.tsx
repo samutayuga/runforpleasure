@@ -1,5 +1,6 @@
 import React from "react";
-import { View, Text, TextInput, Pressable, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
+import { Text, TextInput, Button } from "react-native-paper";
 import type { Profile } from "../core/karvonen";
 
 export function ProfileScreen({
@@ -13,60 +14,39 @@ export function ProfileScreen({
 }): React.JSX.Element {
   return (
     <View style={styles.wrap}>
-      <Text style={styles.title}>Your profile</Text>
+      <Text variant="headlineSmall" style={styles.title}>Your profile</Text>
 
-      <Field
-        label="Age"
-        value={profile.age}
-        onChangeNumber={(n) => onChange({ ...profile, age: n })}
-      />
-      <Field
-        label="Resting HR (bpm)"
-        value={profile.restingHr}
-        onChangeNumber={(n) => onChange({ ...profile, restingHr: n })}
-      />
-
-      <Pressable
-        onPress={onDone}
-        accessibilityRole="button"
-        accessibilityLabel="Done"
-        style={styles.done}
-      >
-        <Text style={styles.doneText}>Done</Text>
-      </Pressable>
-    </View>
-  );
-}
-
-function Field({
-  label,
-  value,
-  onChangeNumber,
-}: {
-  label: string;
-  value: number;
-  onChangeNumber: (n: number) => void;
-}): React.JSX.Element {
-  return (
-    <View style={styles.field}>
-      <Text style={styles.label}>{label}</Text>
       <TextInput
+        label="Age"
+        mode="outlined"
         keyboardType="number-pad"
-        value={String(value)}
-        onChangeText={(t) => onChangeNumber(Number(t) || 0)}
-        style={styles.input}
-        accessibilityLabel={label}
+        value={String(profile.age)}
+        onChangeText={(t) => onChange({ ...profile, age: Number(t) || 0 })}
+        accessibilityLabel="Age"
       />
+      <TextInput
+        label="Resting HR (bpm)"
+        mode="outlined"
+        keyboardType="number-pad"
+        value={String(profile.restingHr)}
+        onChangeText={(t) => onChange({ ...profile, restingHr: Number(t) || 0 })}
+        accessibilityLabel="Resting HR (bpm)"
+      />
+
+      <Button
+        mode="contained"
+        onPress={onDone}
+        accessibilityLabel="Done"
+        style={styles.doneButton}
+      >
+        Done
+      </Button>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { width: "100%", maxWidth: 480, alignSelf: "center", gap: 16, padding: 16 },
-  title: { fontSize: 22, fontWeight: "700" },
-  field: { gap: 4 },
-  label: { fontSize: 14, color: "#6B7280" },
-  input: { borderWidth: 1, borderColor: "#CBD5E1", borderRadius: 10, padding: 12, fontSize: 18 },
-  done: { minHeight: 48, borderRadius: 12, backgroundColor: "#0E7C7B", alignItems: "center", justifyContent: "center" },
-  doneText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  wrap: { flex: 1, width: "100%", maxWidth: 480, alignSelf: "center", gap: 16, padding: 16, justifyContent: "center", backgroundColor: "#0B1220" },
+  title: { color: "#F1F5F9" },
+  doneButton: { marginTop: 8 },
 });

@@ -2,10 +2,11 @@ import "./global.css";
 import React, { useState } from "react";
 import { SafeAreaView, StyleSheet } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { PaperProvider, MD3DarkTheme } from "react-native-paper";
+import { PaperProvider } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { RunScreen } from "./src/ui/RunScreen";
 import { ProfileScreen } from "./src/ui/ProfileScreen";
+import { paperTheme } from "./src/ui/paperTheme";
 import type { Profile } from "./src/core/karvonen";
 
 export default function App(): React.JSX.Element {
@@ -14,9 +15,9 @@ export default function App(): React.JSX.Element {
 
   return (
     <SafeAreaProvider>
-      <PaperProvider theme={MD3DarkTheme}>
+      <PaperProvider theme={paperTheme}>
         <SafeAreaView style={styles.root}>
-          <StatusBar style="auto" />
+          <StatusBar style="light" />
           {editing ? (
             <ProfileScreen profile={profile} onChange={setProfile} onDone={() => setEditing(false)} />
           ) : (
@@ -29,5 +30,5 @@ export default function App(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#fff" },
+  root: { flex: 1, backgroundColor: "#0B1220" },
 });

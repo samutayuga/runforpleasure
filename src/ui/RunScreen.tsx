@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, ActivityIndicator, StyleSheet, Pressable } from "react-native";
+import { View, ActivityIndicator, StyleSheet } from "react-native";
+import { Text, Button, Surface } from "react-native-paper";
 import { parseGpx } from "../core/gpxParser";
 import { cumulativeDistances } from "../core/geo";
 import { ReplayEngine } from "../core/replayEngine";
@@ -64,7 +65,7 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
   if (error) {
     return (
       <View style={styles.center}>
-        <Text>Could not load run. Please try again.</Text>
+        <Text style={styles.statusText}>Could not load run. Please try again.</Text>
       </View>
     );
   }
@@ -72,8 +73,8 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
   if (!run || !engineRef.current) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator />
-        <Text>Loading run…</Text>
+        <ActivityIndicator color="#F1F5F9" />
+        <Text style={styles.statusText}>Loading run…</Text>
       </View>
     );
   }
@@ -104,16 +105,17 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
 
   return (
     <View style={styles.screen}>
-      <Text style={styles.title}>{run.name}</Text>
-      <Pressable
-        style={styles.importButton}
+      <Text variant="titleMedium" style={styles.title}>{run.name}</Text>
+      <Button
+        mode="contained-tonal"
         onPress={() => { void handleImport(); }}
-        accessibilityRole="button"
         accessibilityLabel="Import GPX"
       >
-        <Text style={styles.importButtonText}>Import GPX</Text>
-      </Pressable>
-      <RouteView points={run.points} currentIndex={engine.fractionalIndex} markerColor={markerColor} />
+        Import GPX
+      </Button>
+      <Surface style={styles.mapPanel} elevation={2}>
+        <RouteView points={run.points} currentIndex={engine.fractionalIndex} markerColor={markerColor} size={280} />
+      </Surface>
       <Dashboard
         metrics={metrics}
         playing={engine.playing}
@@ -137,17 +139,14 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, alignItems: "center", justifyContent: "center", gap: 20, padding: 16 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 8 },
-  title: { fontSize: 18, fontWeight: "600" },
-  importButton: {
-    minHeight: 48,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: "#E5E7EB",
+  screen: { flex: 1, alignItems: "center", justifyContent: "center", gap: 20, padding: 16, backgroundColor: "#0B1220" },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: "#0B1220" },
+  title: { color: "#F1F5F9" },
+  statusText: { color: "#F1F5F9" },
+  mapPanel: {
+    borderRadius: 16,
+    backgroundColor: "#0F1A2E",
+    padding: 12,
     alignItems: "center",
-    justifyContent: "center",
   },
-  importButtonText: { fontSize: 15, fontWeight: "500", color: "#111827" },
 });
