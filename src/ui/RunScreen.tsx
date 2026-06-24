@@ -5,6 +5,7 @@ import { parseGpx } from "../core/gpxParser";
 import { cumulativeDistances } from "../core/geo";
 import { ReplayEngine } from "../core/replayEngine";
 import { deriveMetrics } from "../core/metrics";
+import { characterizeRun } from "../core/characterize";
 import type { Run } from "../core/types";
 import type { Profile } from "../core/karvonen";
 import { ZONE_THEME } from "./theme";
@@ -77,6 +78,11 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
     [run],
   );
 
+  const runTitle = useMemo(
+    () => (run ? characterizeRun(run.points, cumulative, profile) : ""),
+    [run, cumulative, profile],
+  );
+
   if (error) {
     return (
       <View style={styles.center}>
@@ -120,7 +126,7 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
 
   return (
     <View style={styles.screen}>
-      <Text variant="titleMedium" style={styles.title}>{run.name}</Text>
+      <Text variant="titleMedium" style={styles.title}>{runTitle}</Text>
       <Surface style={styles.mapPanel} elevation={1}>
         <MapView points={run.points} progressIndex={engine.fractionalIndex} markerColor={markerColor} onRequestImport={handleImport} />
       </Surface>
