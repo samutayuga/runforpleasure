@@ -66,3 +66,39 @@ describe("ReplayEngine", () => {
     expect(e.current.hr).toBe(152);
   });
 });
+
+describe("ReplayEngine.fractionalIndex", () => {
+  it("paused at start → fractionalIndex === 0", () => {
+    const e = new ReplayEngine(track());
+    expect(e.fractionalIndex).toBe(0);
+  });
+
+  it("play + advance(1500) → fractionalIndex close to 1.5", () => {
+    const e = new ReplayEngine(track());
+    e.play();
+    e.advance(1500);
+    expect(e.fractionalIndex).toBeCloseTo(1.5, 5);
+  });
+
+  it("play + advance(500) → fractionalIndex close to 0.5", () => {
+    const e = new ReplayEngine(track());
+    e.play();
+    e.advance(500);
+    expect(e.fractionalIndex).toBeCloseTo(0.5, 5);
+  });
+
+  it("play + advance(10_000) past end → fractionalIndex === 3 (last index)", () => {
+    const e = new ReplayEngine(track());
+    e.play();
+    e.advance(10_000);
+    expect(e.fractionalIndex).toBe(3);
+  });
+
+  it("seekToStart after advancing → fractionalIndex === 0", () => {
+    const e = new ReplayEngine(track());
+    e.play();
+    e.advance(2000);
+    e.seekToStart();
+    expect(e.fractionalIndex).toBe(0);
+  });
+});

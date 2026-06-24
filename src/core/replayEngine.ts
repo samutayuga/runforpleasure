@@ -54,4 +54,13 @@ export class ReplayEngine {
   get current(): TrackPoint {
     return this.points[this.index];
   }
+
+  get fractionalIndex(): number {
+    const i = this.index;
+    if (i + 1 >= this.offsets.length) return i;
+    const segDuration = this.offsets[i + 1] - this.offsets[i];
+    if (segDuration === 0) return i;
+    const frac = (this.elapsedMs - this.offsets[i]) / segDuration;
+    return i + Math.min(1, Math.max(0, frac));
+  }
 }
