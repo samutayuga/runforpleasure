@@ -10,6 +10,7 @@ import type { Profile } from "../core/karvonen";
 import { ZONE_THEME } from "./theme";
 import MapView from "./MapView";
 import { Dashboard } from "./Dashboard";
+import { ElevationProfile } from "./ElevationProfile";
 import { loadSampleGpx } from "./loadSampleGpx";
 import { pickGpx } from "./pickGpx";
 import { fetchWeather } from "./weather";
@@ -123,6 +124,15 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
       <Surface style={styles.mapPanel} elevation={1}>
         <MapView points={run.points} progressIndex={engine.fractionalIndex} markerColor={markerColor} onRequestImport={handleImport} />
       </Surface>
+      <View style={styles.elevationWrapper}>
+        <ElevationProfile
+          points={run.points}
+          cumulative={cumulative}
+          profile={profile}
+          progressIndex={engine.fractionalIndex}
+          width={480}
+        />
+      </View>
       <Dashboard
         metrics={metrics}
         playing={engine.playing}
@@ -160,6 +170,11 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: "#0F1A2E",
     overflow: "hidden",
+    alignSelf: "center",
+  },
+  elevationWrapper: {
+    width: "100%",
+    maxWidth: 480,
     alignSelf: "center",
   },
 });
