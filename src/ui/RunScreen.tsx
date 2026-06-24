@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { View, ActivityIndicator, StyleSheet } from "react-native";
+import { View, ActivityIndicator, StyleSheet, ScrollView } from "react-native";
 import { Text, Button, Surface } from "react-native-paper";
 import { parseGpx } from "../core/gpxParser";
 import { cumulativeDistances } from "../core/geo";
@@ -14,11 +14,13 @@ import { loadSampleGpx } from "./loadSampleGpx";
 import { pickGpx } from "./pickGpx";
 
 const SPEEDS = [1, 4, 8];
+const MAP_BASE = 280;
 
 export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element {
   const [run, setRun] = useState<Run | null>(null);
   const [error, setError] = useState(false);
   const [, force] = useState(0);
+  const [zoom, setZoom] = useState(1);
   const engineRef = useRef<ReplayEngine | null>(null);
   const speedIdx = useRef(0);
   const lastTs = useRef<number | null>(null);
@@ -82,6 +84,7 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
   const engine = engineRef.current;
   const metrics = deriveMetrics(run, cumulative, engine.index, profile);
   const markerColor = metrics.zone ? ZONE_THEME[metrics.zone].color : "#6B7280";
+  const mapSize = Math.round(MAP_BASE * zoom);
 
   const handleImport = async () => {
     try {
@@ -114,8 +117,37 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
         Import GPX
       </Button>
       <Surface style={styles.mapPanel} elevation={2}>
-        <RouteView points={run.points} currentIndex={engine.fractionalIndex} markerColor={markerColor} size={280} />
+        <ScrollView
+          style={styles.mapScrollOuter}
+          contentContainerStyle={{ height: mapSize }}
+          showsVerticalScrollIndicator
+        >
+          <ScrollView
+            horizontal
+            contentContainerStyle={{ width: mapSize }}
+            showsHorizontalScrollIndicator
+          >
+            <RouteView points={run.points} currentIndex={engine.fractionalIndex} markerColor={markerColor} size={mapSize} />
+          </ScrollView>
+        </ScrollView>
       </Surface>
+      <View style={styles.zoomRow}>
+        <Button
+          mode="contained-tonal"
+          compact
+          onPress={() => setZoom((z) => Math.max(1, +(z - 0.5).toFixed(1)))}
+        >
+          {"–"}
+        </Button>
+        <Text style={styles.zoomLabel}>{`${zoom}×`}</Text>
+        <Button
+          mode="contained-tonal"
+          compact
+          onPress={() => setZoom((z) => Math.min(4, +(z + 0.5).toFixed(1)))}
+        >
+          {"+"}
+        </Button>
+      </View>
       <Dashboard
         metrics={metrics}
         playing={engine.playing}
@@ -146,7 +178,22 @@ const styles = StyleSheet.create({
   mapPanel: {
     borderRadius: 16,
     backgroundColor: "#0F1A2E",
-    padding: 12,
+    overflow: "hidden",
+    height: 300,
+    width: 304,
+  },
+  mapScrollOuter: {
+    flex: 1,
+  },
+  zoomRow: {
+    flexDirection: "row",
     alignItems: "center",
+    gap: 12,
+  },
+  zoomLabel: {
+    color: "#F1F5F9",
+    fontSize: 14,
+    minWidth: 36,
+    textAlign: "center",
   },
 });
