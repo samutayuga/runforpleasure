@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Modal, View, ScrollView, Pressable, StyleSheet, ActivityIndicator } from "react-native";
+import { Modal, View, ScrollView, Pressable, StyleSheet, ActivityIndicator, Linking } from "react-native";
 import { Text, TextInput, Button } from "react-native-paper";
 import { fetchActivities, fetchActivityTrack } from "./strava";
 import type { StravaActivity } from "./strava";
@@ -30,6 +30,7 @@ export function StravaPanel({ visible, onClose, onSelectTrack }: StravaPanelProp
   const [activities, setActivities] = useState<StravaActivity[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loadingTrack, setLoadingTrack] = useState<number | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
 
   const handleLoadActivities = async () => {
     setError(null);
@@ -77,6 +78,32 @@ export function StravaPanel({ visible, onClose, onSelectTrack }: StravaPanelProp
             textColor="#F1F5F9"
             theme={{ colors: { onSurfaceVariant: "#94A3B8", background: "#0F1A2E" } }}
           />
+
+          <Pressable onPress={() => setShowHelp((v) => !v)} accessibilityRole="button">
+            <Text style={styles.helpToggle}>{showHelp ? "Hide token help ▲" : "How do I get a token? ▼"}</Text>
+          </Pressable>
+
+          {showHelp && (
+            <View style={styles.helpBox}>
+              <Text style={styles.helpStep}>1. It{"'"}s free — no Strava subscription needed.</Text>
+              <Text style={styles.helpStep}>2. Create a free app at Strava API settings (callback domain: localhost).</Text>
+              <Text
+                style={styles.link}
+                onPress={() => { void Linking.openURL("https://www.strava.com/settings/api"); }}
+              >
+                Open Strava API settings
+              </Text>
+              <Text style={styles.helpStep}>3. Authorize activity access — open this URL (replace YOUR_ID), approve, then copy the code from the redirected URL:</Text>
+              <Text style={styles.code} selectable>
+                {"https://www.strava.com/oauth/authorize?client_id=YOUR_ID&response_type=code&redirect_uri=http://localhost&approval_prompt=force&scope=activity:read_all"}
+              </Text>
+              <Text style={styles.helpStep}>4. Exchange the code for a token:</Text>
+              <Text style={styles.code} selectable>
+                {"curl -X POST https://www.strava.com/oauth/token -d client_id=ID -d client_secret=SECRET -d code=CODE -d grant_type=authorization_code"}
+              </Text>
+              <Text style={styles.helpStep}>5. Paste the returned access_token above.</Text>
+            </View>
+          )}
 
           <Button
             mode="contained"
@@ -195,4 +222,9 @@ const styles = StyleSheet.create({
   closeBtn: {
     marginTop: 10,
   },
+  helpToggle: { color: "#FB923C", fontSize: 13, marginTop: 8, marginBottom: 4 },
+  helpBox: { backgroundColor: "#0F1A2E", borderRadius: 10, padding: 12, gap: 6, marginBottom: 8 },
+  helpStep: { color: "#CBD5E1", fontSize: 12, lineHeight: 17 },
+  link: { color: "#60A5FA", fontSize: 12, textDecorationLine: "underline" },
+  code: { color: "#94A3B8", fontSize: 10, fontFamily: "monospace" },
 });
