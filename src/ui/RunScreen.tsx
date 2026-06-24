@@ -16,12 +16,16 @@ import { loadSampleGpx } from "./loadSampleGpx";
 import { pickGpx } from "./pickGpx";
 import { fetchWeather } from "./weather";
 import type { Weather } from "./weather";
+import { fetchSurfaceAlongRoute } from "./osmSurface";
+import type { SurfaceSample } from "./osmSurface";
+import { SurfaceStrip } from "./SurfaceStrip";
 
 const SPEEDS = [1, 4, 8];
 
 export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element {
   const [run, setRun] = useState<Run | null>(null);
   const [weather, setWeather] = useState<Weather | null>(null);
+  const [surfaces, setSurfaces] = useState<SurfaceSample[]>([]);
   const [error, setError] = useState(false);
   const [, force] = useState(0);
   const engineRef = useRef<ReplayEngine | null>(null);
@@ -47,6 +51,11 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
     };
   }, []);
 
+  const cumulative = useMemo(
+    () => (run ? cumulativeDistances(run.points) : []),
+    [run],
+  );
+
   useEffect(() => {
     setWeather(null);
     if (!run || run.points.length === 0) return;
@@ -55,6 +64,16 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
     fetchWeather(lat, lon, time).then((w) => {
       if (!cancelled) setWeather(w);
     }).catch(() => { /* graceful null fallback */ });
+    return () => { cancelled = true; };
+  }, [run]);
+
+  useEffect(() => {
+    setSurfaces([]);
+    if (!run || run.points.length === 0) return;
+    let cancelled = false;
+    fetchSurfaceAlongRoute(run.points, cumulative).then((s) => {
+      if (!cancelled) setSurfaces(s);
+    });
     return () => { cancelled = true; };
   }, [run]);
 
@@ -72,11 +91,6 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, []);
-
-  const cumulative = useMemo(
-    () => (run ? cumulativeDistances(run.points) : []),
-    [run],
-  );
 
   const runTitle = useMemo(
     () => (run ? characterizeRun(run.points, cumulative, profile) : ""),
@@ -139,6 +153,9 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
           width={480}
         />
       </View>
+      <View style={styles.surfaceWrapper}>
+        <SurfaceStrip samples={surfaces} width={480} />
+      </View>
       <Dashboard
         metrics={metrics}
         playing={engine.playing}
@@ -179,6 +196,11 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   elevationWrapper: {
+    width: "100%",
+    maxWidth: 480,
+    alignSelf: "center",
+  },
+  surfaceWrapper: {
     width: "100%",
     maxWidth: 480,
     alignSelf: "center",
