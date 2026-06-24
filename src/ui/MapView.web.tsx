@@ -20,12 +20,16 @@ export interface MapViewProps {
   onRequestImport?: () => void;
 }
 
-if (typeof document !== "undefined" && !document.getElementById("runner-bob-style")) {
+if (typeof document !== "undefined" && !document.getElementById("runner-anim-style")) {
   const style = document.createElement("style");
-  style.id = "runner-bob-style";
+  style.id = "runner-anim-style";
   style.textContent =
-    "@keyframes runnerBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}" +
-    ".runner-bob{animation:runnerBob .5s ease-in-out infinite}";
+    "@keyframes rnStepA{0%,49.9%{opacity:1}50%,100%{opacity:0}}" +
+    "@keyframes rnStepB{0%,49.9%{opacity:0}50%,100%{opacity:1}}" +
+    "@keyframes rnBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}" +
+    ".rn-a{animation:rnStepA .36s steps(1) infinite}" +
+    ".rn-b{animation:rnStepB .36s steps(1) infinite}" +
+    ".rn-bob{animation:rnBob .36s ease-in-out infinite}";
   document.head.appendChild(style);
 }
 
@@ -49,20 +53,38 @@ export default function MapView({ points, progressIndex, markerColor: _markerCol
   const b = points[i + 1] ?? a;
   const facingRight = b.lon - a.lon >= 0;
 
-  const runnerIcon = useMemo(
-    () =>
-      L.divIcon({
-        html:
-          // 🏃 emoji faces left by default; mirror it to face right when heading east
-          `<div style="transform:scaleX(${facingRight ? -1 : 1})">` +
-          `<div class="runner-bob" style="font-size:22px;line-height:24px;text-align:center">🏃</div>` +
-          `</div>`,
-        className: "runner-marker",
-        iconSize: [24, 24],
-        iconAnchor: [12, 22],
-      }),
-    [facingRight],
-  );
+  const runnerIcon = useMemo(() => {
+    const flip = facingRight ? -1 : 1; // 🏃 faces right when heading east
+    const svg =
+      `<svg width="20" height="20" viewBox="0 0 24 24" stroke="#0F172A" stroke-width="2" stroke-linecap="round" fill="none">` +
+        `<circle cx="14" cy="4" r="2.4" fill="#0F172A" stroke="none"/>` +
+        `<line x1="13.5" y1="6.2" x2="10" y2="14"/>` +
+        `<g class="rn-a">` +
+          `<line x1="10" y1="14" x2="15" y2="19.5"/>` +
+          `<line x1="10" y1="14" x2="6.5" y2="20.5"/>` +
+          `<line x1="12.5" y1="8" x2="16.5" y2="10.5"/>` +
+          `<line x1="12.5" y1="8" x2="9" y2="6.5"/>` +
+        `</g>` +
+        `<g class="rn-b">` +
+          `<line x1="10" y1="14" x2="8" y2="21"/>` +
+          `<line x1="10" y1="14" x2="13" y2="20.5"/>` +
+          `<line x1="12.5" y1="8" x2="9" y2="10.5"/>` +
+          `<line x1="12.5" y1="8" x2="16" y2="6.5"/>` +
+        `</g>` +
+      `</svg>`;
+    return L.divIcon({
+      html:
+        `<div style="transform:scaleX(${flip})">` +
+          `<div class="rn-bob" style="width:26px;height:26px;border-radius:50%;background:rgba(248,250,252,0.92);` +
+          `display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,0.4)">` +
+            svg +
+          `</div>` +
+        `</div>`,
+      className: "runner-marker",
+      iconSize: [26, 26],
+      iconAnchor: [13, 24],
+    });
+  }, [facingRight]);
   const markerPos: LatLngExpression = [a.lat + (b.lat - a.lat) * frac, a.lon + (b.lon - a.lon) * frac];
   const passed = useMemo<LatLngExpression[]>(
     () => latlngs.slice(0, i + 1).concat([markerPos]),
