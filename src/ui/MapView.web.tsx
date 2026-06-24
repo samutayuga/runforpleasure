@@ -51,10 +51,17 @@ export default function MapView({ points, progressIndex, markerColor: _markerCol
   const frac = clamped - i;
   const a = points[i] ?? points[0];
   const b = points[i + 1] ?? a;
-  const facingRight = b.lon - a.lon >= 0;
+
+  const j = Math.min(i + 4, points.length - 1);
+  const ahead = points[j];
+  const dx = (ahead.lon - a.lon) * Math.cos((a.lat * Math.PI) / 180);
+  const dy = ahead.lat - a.lat;
+  const bearingRaw = (dx === 0 && dy === 0) ? 0 : (Math.atan2(-dy, dx) * 180) / Math.PI;
+  const bearingQ = Math.round(bearingRaw / 8) * 8;
 
   const runnerIcon = useMemo(() => {
-    const flip = facingRight ? -1 : 1; // 🏃 faces right when heading east
+    const upsideDown = Math.abs(bearingQ) > 90;
+    const transform = `rotate(${bearingQ}deg)` + (upsideDown ? " scaleY(-1)" : "");
     const svg =
       `<svg width="20" height="20" viewBox="0 0 24 24" stroke="#0F172A" stroke-width="2" stroke-linecap="round" fill="none">` +
         `<circle cx="14" cy="4" r="2.4" fill="#0F172A" stroke="none"/>` +
@@ -74,7 +81,7 @@ export default function MapView({ points, progressIndex, markerColor: _markerCol
       `</svg>`;
     return L.divIcon({
       html:
-        `<div style="transform:scaleX(${flip})">` +
+        `<div style="transform:${transform}">` +
           `<div class="rn-bob" style="width:26px;height:26px;border-radius:50%;background:rgba(248,250,252,0.92);` +
           `display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,0.4)">` +
             svg +
@@ -84,7 +91,7 @@ export default function MapView({ points, progressIndex, markerColor: _markerCol
       iconSize: [26, 26],
       iconAnchor: [13, 24],
     });
-  }, [facingRight]);
+  }, [bearingQ]);
   const markerPos: LatLngExpression = [a.lat + (b.lat - a.lat) * frac, a.lon + (b.lon - a.lon) * frac];
   const passed = useMemo<LatLngExpression[]>(
     () => latlngs.slice(0, i + 1).concat([markerPos]),
