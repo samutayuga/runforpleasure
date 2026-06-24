@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { View, ActivityIndicator, ScrollView, StyleSheet } from "react-native";
+import { View, ActivityIndicator, ScrollView, StyleSheet, Pressable } from "react-native";
 import { Text, Surface } from "react-native-paper";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { parseGpx } from "../core/gpxParser";
 import { cumulativeDistances } from "../core/geo";
 import { ReplayEngine } from "../core/replayEngine";
@@ -25,6 +26,17 @@ import { StravaPanel } from "./StravaPanel";
 import { reverseGeocode } from "./geocode";
 
 const SPEEDS = [1, 4, 8];
+
+function ToolbarButton({ icon, label, onPress }: {
+  icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; onPress: () => void;
+}): React.JSX.Element {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={styles.toolBtn}>
+      <MaterialCommunityIcons name={icon} size={16} color="#F1F5F9" />
+      <Text style={styles.toolBtnText}>{label}</Text>
+    </Pressable>
+  );
+}
 
 export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element {
   const [run, setRun] = useState<Run | null>(null);
@@ -181,6 +193,11 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
       contentContainerStyle={styles.scrollContent}
     >
       <Text variant="titleMedium" style={styles.title}>{runTitle}</Text>
+      <View style={styles.toolbar}>
+        <ToolbarButton icon="upload" label="Import" onPress={() => { void handleImport(); }} />
+        <ToolbarButton icon="format-list-bulleted" label="Routes" onPress={() => setRoutesOpen(true)} />
+        <ToolbarButton icon="bike" label="Strava" onPress={() => setStravaOpen(true)} />
+      </View>
       <Surface style={styles.mapSection} elevation={1}>
         <View style={styles.mapBox}>
           <MapView points={run.points} progressIndex={engine.fractionalIndex} markerColor={markerColor} cumulative={cumulative} onRequestImport={handleImport} onRequestStrava={() => setStravaOpen(true)} onShowRoutes={() => setRoutesOpen(true)} />
@@ -250,4 +267,11 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 360,
   },
+  toolbar: { flexDirection: "row", gap: 8, marginBottom: 6, alignSelf: "center" },
+  toolBtn: {
+    flexDirection: "row", alignItems: "center", gap: 5,
+    paddingHorizontal: 12, minHeight: 40, borderRadius: 10,
+    backgroundColor: "#1E293B", borderWidth: 1, borderColor: "#334155",
+  },
+  toolBtnText: { color: "#F1F5F9", fontSize: 13, fontWeight: "600" },
 });
