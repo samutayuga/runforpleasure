@@ -53,7 +53,8 @@ export default function MapView({ points, progressIndex, markerColor: _markerCol
     () =>
       L.divIcon({
         html:
-          `<div style="transform:scaleX(${facingRight ? 1 : -1})">` +
+          // 🏃 emoji faces left by default; mirror it to face right when heading east
+          `<div style="transform:scaleX(${facingRight ? -1 : 1})">` +
           `<div class="runner-bob" style="font-size:22px;line-height:24px;text-align:center">🏃</div>` +
           `</div>`,
         className: "runner-marker",
