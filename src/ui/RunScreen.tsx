@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { View, ActivityIndicator, StyleSheet, Platform } from "react-native";
+import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { Text, Button, Surface } from "react-native-paper";
-import { GestureDetector, Gesture } from "react-native-gesture-handler";
 import { parseGpx } from "../core/gpxParser";
 import { cumulativeDistances } from "../core/geo";
 import { ReplayEngine } from "../core/replayEngine";
@@ -9,7 +8,7 @@ import { deriveMetrics } from "../core/metrics";
 import type { Run } from "../core/types";
 import type { Profile } from "../core/karvonen";
 import { ZONE_THEME } from "./theme";
-import { RouteView } from "./RouteView";
+import MapView from "./MapView";
 import { Dashboard } from "./Dashboard";
 import { loadSampleGpx } from "./loadSampleGpx";
 import { pickGpx } from "./pickGpx";
@@ -17,13 +16,6 @@ import { fetchWeather } from "./weather";
 import type { Weather } from "./weather";
 
 const SPEEDS = [1, 4, 8];
-const MAP_BASE = 280;
-const PANEL = 300;
-const MIN_SCALE = 1;
-const MAX_SCALE = 4;
-const clampScale = (s: number) => Math.max(MIN_SCALE, Math.min(MAX_SCALE, s));
-const maxPan = (s: number) => Math.max(0, (MAP_BASE * s - PANEL) / 2 + 30);
-const clampPan = (v: number, s: number) => Math.max(-maxPan(s), Math.min(maxPan(s), v));
 
 export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element {
   const [run, setRun] = useState<Run | null>(null);
@@ -33,14 +25,6 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
   const engineRef = useRef<ReplayEngine | null>(null);
   const speedIdx = useRef(0);
   const lastTs = useRef<number | null>(null);
-
-  const [scale, setScale] = useState(1);
-  const [tx, setTx] = useState(0);
-  const [ty, setTy] = useState(0);
-  const scaleStart = useRef(1);
-  const txStart = useRef(0);
-  const tyStart = useRef(0);
-  const mapWrapRef = useRef<View>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -87,37 +71,10 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  useEffect(() => {
-    if (Platform.OS !== "web") return;
-    const node = mapWrapRef.current as unknown as HTMLElement | null;
-    if (!node || typeof node.addEventListener !== "function") return;
-    const onWheel = (ev: WheelEvent) => {
-      ev.preventDefault();
-      setScale((s) => clampScale(s - ev.deltaY * 0.002));
-    };
-    node.addEventListener("wheel", onWheel, { passive: false });
-    return () => node.removeEventListener("wheel", onWheel);
-  }, [run]);
-
   const cumulative = useMemo(
     () => (run ? cumulativeDistances(run.points) : []),
     [run],
   );
-
-  const pinch = Gesture.Pinch()
-    .runOnJS(true)
-    .onStart(() => { scaleStart.current = scale; })
-    .onUpdate((e) => { setScale(clampScale(scaleStart.current * e.scale)); });
-
-  const pan = Gesture.Pan()
-    .runOnJS(true)
-    .onStart(() => { txStart.current = tx; tyStart.current = ty; })
-    .onUpdate((e) => {
-      setTx(clampPan(txStart.current + e.translationX, scale));
-      setTy(clampPan(tyStart.current + e.translationY, scale));
-    });
-
-  const mapGesture = Gesture.Simultaneous(pinch, pan);
 
   if (error) {
     return (
@@ -171,21 +128,7 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
         Import GPX
       </Button>
       <Surface style={styles.mapPanel} elevation={1}>
-        <GestureDetector gesture={mapGesture}>
-          <View
-            ref={mapWrapRef}
-            style={{ width: "100%", height: "100%", alignItems: "center", justifyContent: "center" }}
-          >
-            <View style={{ transform: [{ translateX: tx }, { translateY: ty }, { scale }] }}>
-              <RouteView
-                points={run.points}
-                currentIndex={engine.fractionalIndex}
-                markerColor={markerColor}
-                size={MAP_BASE}
-              />
-            </View>
-          </View>
-        </GestureDetector>
+        <MapView points={run.points} progressIndex={engine.fractionalIndex} markerColor={markerColor} />
       </Surface>
       <Dashboard
         metrics={metrics}
@@ -220,7 +163,7 @@ const styles = StyleSheet.create({
   mapPanel: {
     width: "100%",
     maxWidth: 360,
-    height: 300,
+    height: 320,
     borderRadius: 16,
     backgroundColor: "#0F1A2E",
     overflow: "hidden",
