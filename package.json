@@ -9,14 +9,20 @@
     "expo-file-system": "~56.0.8",
     "expo-status-bar": "~56.0.4",
     "fast-xml-parser": "^5.9.3",
+    "nativewind": "^4.2.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.85.3",
+    "react-native-paper": "^5.15.3",
+    "react-native-reanimated": "4.3.1",
+    "react-native-safe-area-context": "~5.7.0",
     "react-native-svg": "15.15.4",
     "react-native-web": "^0.21.2"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "babel-preset-expo": "^56.0.15",
+    "tailwindcss": "^3.4.19",
     "typescript": "~6.0.3",
     "vitest": "^4.1.9"
   },
