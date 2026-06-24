@@ -102,6 +102,9 @@ export function StravaPanel({ visible, onClose, onSelectTrack }: StravaPanelProp
                 {"curl -X POST https://www.strava.com/oauth/token -d client_id=ID -d client_secret=SECRET -d code=CODE -d grant_type=authorization_code"}
               </Text>
               <Text style={styles.helpStep}>5. Paste the returned access_token above.</Text>
+              <Text style={styles.helpStep}>
+                No API access? Strava also lets you export any activity as GPX (open the activity → "···" menu → "Export GPX", or bulk-export in account settings), then right-click the map here and choose "Upload GPX file". No token needed.
+              </Text>
             </View>
           )}
 

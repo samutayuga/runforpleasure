@@ -2,6 +2,12 @@ import type { TrackPoint } from "../core/types";
 
 export interface SurfaceSample { distanceM: number; surface: string | null; } // surface = bucket label or null
 
+const ENDPOINTS = [
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.kumi.systems/api/interpreter",
+  "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+];
+
 // Map a raw OSM surface tag to a coarse bucket label.
 export function bucket(raw: string | undefined): string | null {
   if (!raw) return null;
@@ -34,6 +40,21 @@ function segDistM(p: TrackPoint, a: { lat: number; lon: number }, b: { lat: numb
 
 interface OverpassWay { geometry?: Array<{ lat: number; lon: number }>; tags?: { surface?: string } }
 
+async function queryOverpass(url: string, q: string): Promise<OverpassWay[]> {
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: q,
+    });
+    if (!res.ok) return [];
+    const data: { elements?: OverpassWay[] } = await res.json();
+    return (data.elements ?? []).filter((w) => w.geometry && w.geometry.length >= 2 && w.tags?.surface);
+  } catch {
+    return [];
+  }
+}
+
 // Fetch surface category along the route. Returns ~N samples by distance, surface=null where unknown.
 // Returns [] on any failure (offline, query error) — caller treats empty as "unavailable".
 export async function fetchSurfaceAlongRoute(points: TrackPoint[], cumulative: number[]): Promise<SurfaceSample[]> {
@@ -43,21 +64,19 @@ export async function fetchSurfaceAlongRoute(points: TrackPoint[], cumulative: n
     const lons = points.map((p) => p.lon);
     const south = Math.min(...lats), north = Math.max(...lats);
     const west = Math.min(...lons), east = Math.max(...lons);
-    const q = `[out:json][timeout:25];way[highway][surface](${south},${west},${north},${east});out geom;`;
-    const res = await fetch("https://overpass-api.de/api/interpreter", {
-      method: "POST",
-      headers: { "Content-Type": "text/plain" },
-      body: q,
-    });
-    if (!res.ok) return [];
-    const data: { elements?: OverpassWay[] } = await res.json();
-    const ways = (data.elements ?? []).filter((w) => w.geometry && w.geometry.length >= 2 && w.tags?.surface);
+    const q = `[out:json][timeout:30];way[highway][surface](${south},${west},${north},${east});out geom;`;
+
+    let ways: OverpassWay[] = [];
+    for (const url of ENDPOINTS) {
+      ways = await queryOverpass(url, q);
+      if (ways.length > 0) break;
+    }
     if (ways.length === 0) return [];
 
     const N = Math.min(80, points.length);
     const step = Math.max(1, Math.floor(points.length / N));
     const out: SurfaceSample[] = [];
-    const THRESHOLD = 25; // metres
+    const THRESHOLD = 40; // metres
     for (let i = 0; i < points.length; i += step) {
       const p = points[i];
       let best = Infinity;
