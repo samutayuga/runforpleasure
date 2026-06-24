@@ -4,11 +4,19 @@ import { Surface, Button } from "react-native-paper";
 import type { LiveMetrics } from "../core/metrics";
 import { formatDuration, formatDistance, formatPace } from "../core/format";
 import { ZONE_THEME } from "./theme";
+import type { Weather } from "./weather";
+
+function formatClock(d: Date): string {
+  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
 
 export function Dashboard({
   metrics,
   playing,
   speed,
+  startTime,
+  endTime,
+  weather,
   onPlayPause,
   onRestart,
   onCycleSpeed,
@@ -16,6 +24,9 @@ export function Dashboard({
   metrics: LiveMetrics;
   playing: boolean;
   speed: number;
+  startTime: Date;
+  endTime: Date;
+  weather: Weather | null;
   onPlayPause: () => void;
   onRestart: () => void;
   onCycleSpeed: () => void;
@@ -41,6 +52,32 @@ export function Dashboard({
         <Metric label="Distance" value={formatDistance(metrics.distanceMeters)} />
         <Metric label="Pace" value={formatPace(metrics.paceMinPerKm)} />
       </View>
+
+      <Surface style={styles.infoCard} elevation={2}>
+        <View style={styles.infoGrid}>
+          <View style={styles.infoItem}><Metric label="Start" value={formatClock(startTime)} /></View>
+          <View style={styles.infoItem}><Metric label="End" value={formatClock(endTime)} /></View>
+          <View style={styles.infoItem}>
+            <Metric
+              label="Temp"
+              value={weather?.temperatureC != null ? `${Math.round(weather.temperatureC)}°C` : "—"}
+            />
+          </View>
+          <View style={styles.infoItem}>
+            <Metric
+              label="Humidity"
+              value={weather?.humidityPct != null ? `${Math.round(weather.humidityPct)}%` : "—"}
+            />
+          </View>
+          <View style={styles.infoItem}>
+            <Metric
+              label="Wind"
+              value={weather?.windKmh != null ? `${Math.round(weather.windKmh)} km/h` : "—"}
+            />
+          </View>
+          <View style={styles.infoItem}><Metric label="Weather" value={weather?.condition ?? "—"} /></View>
+        </View>
+      </Surface>
 
       <View style={styles.controls}>
         <Button mode="contained-tonal" onPress={onPlayPause} accessibilityLabel={playing ? "Pause" : "Play"}>
@@ -93,5 +130,21 @@ const styles = StyleSheet.create({
   metric: { alignItems: "center" },
   metricValue: { fontSize: 20, fontWeight: "600", color: "#F1F5F9" },
   metricLabel: { fontSize: 12, color: "#94A3B8" },
+  infoCard: {
+    backgroundColor: "#16213A",
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+  },
+  infoGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    rowGap: 12,
+  },
+  infoItem: {
+    minWidth: "30%",
+    alignItems: "center",
+  },
   controls: { flexDirection: "row", justifyContent: "center", gap: 12 },
 });

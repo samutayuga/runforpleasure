@@ -12,12 +12,15 @@ import { RouteView } from "./RouteView";
 import { Dashboard } from "./Dashboard";
 import { loadSampleGpx } from "./loadSampleGpx";
 import { pickGpx } from "./pickGpx";
+import { fetchWeather } from "./weather";
+import type { Weather } from "./weather";
 
 const SPEEDS = [1, 4, 8];
 const MAP_BASE = 280;
 
 export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element {
   const [run, setRun] = useState<Run | null>(null);
+  const [weather, setWeather] = useState<Weather | null>(null);
   const [error, setError] = useState(false);
   const [, force] = useState(0);
   const [zoom, setZoom] = useState(1);
@@ -43,6 +46,17 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    setWeather(null);
+    if (!run || run.points.length === 0) return;
+    let cancelled = false;
+    const { lat, lon, time } = run.points[0];
+    fetchWeather(lat, lon, time).then((w) => {
+      if (!cancelled) setWeather(w);
+    }).catch(() => { /* graceful null fallback */ });
+    return () => { cancelled = true; };
+  }, [run]);
 
   useEffect(() => {
     let raf = 0;
@@ -152,6 +166,9 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
         metrics={metrics}
         playing={engine.playing}
         speed={SPEEDS[speedIdx.current]}
+        startTime={run.points[0].time}
+        endTime={run.points[run.points.length - 1].time}
+        weather={weather}
         onPlayPause={() => {
           engine.playing ? engine.pause() : engine.play();
           force((n) => n + 1);
