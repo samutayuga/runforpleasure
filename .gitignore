@@ -1,1 +1,26 @@
 *.original.md
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# Native
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+ios/
+android/
+
+# macOS
+.DS_Store
+
+# Vitest
+coverage/
