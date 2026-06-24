@@ -13,7 +13,9 @@ import MapView from "./MapView";
 import { Dashboard } from "./Dashboard";
 import { ElevationProfile } from "./ElevationProfile";
 import { loadSampleGpx } from "./loadSampleGpx";
-import { pickGpx } from "./pickGpx";
+import { pickMultipleGpx } from "./pickGpx";
+import { RoutesPanel } from "./RoutesPanel";
+import type { LoadedRoute } from "./RoutesPanel";
 import { fetchWeather } from "./weather";
 import type { Weather } from "./weather";
 import { fetchSurfaceAlongRoute } from "./osmSurface";
@@ -32,6 +34,8 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
   const [endPlace, setEndPlace] = useState<string | null>(null);
   const [error, setError] = useState(false);
   const [stravaOpen, setStravaOpen] = useState(false);
+  const [routes, setRoutes] = useState<LoadedRoute[]>([]);
+  const [routesOpen, setRoutesOpen] = useState(false);
   const [, force] = useState(0);
   const engineRef = useRef<ReplayEngine | null>(null);
   const speedIdx = useRef(0);
@@ -147,10 +151,24 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
 
   const handleImport = async () => {
     try {
-      const picked = await pickGpx();
-      if (!picked) return;
-      const parsed = parseGpx(picked.xml);
-      applyRun(parsed.name, parsed.points);
+      const picked = await pickMultipleGpx();
+      if (picked.length === 0) return;
+      const loaded: LoadedRoute[] = [];
+      for (const f of picked) {
+        const parsed = parseGpx(f.xml);
+        if (parsed.points.length === 0) continue;
+        const cum = cumulativeDistances(parsed.points);
+        loaded.push({
+          name: parsed.name,
+          distanceKm: (cum[cum.length - 1] ?? 0) / 1000,
+          date: parsed.points[0].time,
+          points: parsed.points,
+        });
+      }
+      if (loaded.length === 0) { setError(true); return; }
+      setRoutes((prev) => [...prev, ...loaded]);
+      applyRun(loaded[0].name, loaded[0].points);
+      if (loaded.length > 1) setRoutesOpen(true);
     } catch (err) {
       console.error(err);
       setError(true);
@@ -165,7 +183,7 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
       <Text variant="titleMedium" style={styles.title}>{runTitle}</Text>
       <Surface style={styles.mapSection} elevation={1}>
         <View style={styles.mapBox}>
-          <MapView points={run.points} progressIndex={engine.fractionalIndex} markerColor={markerColor} cumulative={cumulative} onRequestImport={handleImport} onRequestStrava={() => setStravaOpen(true)} />
+          <MapView points={run.points} progressIndex={engine.fractionalIndex} markerColor={markerColor} cumulative={cumulative} onRequestImport={handleImport} onRequestStrava={() => setStravaOpen(true)} onShowRoutes={() => setRoutesOpen(true)} />
         </View>
         <ElevationProfile
           points={run.points}
@@ -203,6 +221,12 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
         visible={stravaOpen}
         onClose={() => setStravaOpen(false)}
         onSelectTrack={(name, pts) => { applyRun(name, pts); setStravaOpen(false); }}
+      />
+      <RoutesPanel
+        visible={routesOpen}
+        routes={routes}
+        onClose={() => setRoutesOpen(false)}
+        onSelect={(r) => { applyRun(r.name, r.points); setRoutesOpen(false); }}
       />
     </ScrollView>
   );

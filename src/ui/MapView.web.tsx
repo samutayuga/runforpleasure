@@ -22,6 +22,7 @@ export interface MapViewProps {
   cumulative: number[];
   onRequestImport?: () => void;
   onRequestStrava?: () => void;
+  onShowRoutes?: () => void;
 }
 
 if (typeof document !== "undefined" && !document.getElementById("runner-anim-style")) {
@@ -66,7 +67,7 @@ function KmMarker({ pos, label }: { pos: [number, number]; label: string }): Rea
   );
 }
 
-export default function MapView({ points, progressIndex, markerColor: _markerColor, cumulative, onRequestImport, onRequestStrava }: MapViewProps): React.JSX.Element {
+export default function MapView({ points, progressIndex, markerColor: _markerColor, cumulative, onRequestImport, onRequestStrava, onShowRoutes }: MapViewProps): React.JSX.Element {
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
 
   const latlngs = useMemo<LatLngExpression[]>(() => points.map((p) => [p.lat, p.lon]), [points]);
@@ -177,7 +178,7 @@ export default function MapView({ points, progressIndex, markerColor: _markerCol
                     background: "rgba(11,18,32,0.7)", color: "#CBD5E1", fontSize: 11,
                     padding: "3px 8px", borderRadius: 6 }}>Right-click for upload / Strava</div>
       {/* context menu */}
-      {menu && (onRequestImport || onRequestStrava) && (
+      {menu && (onRequestImport || onRequestStrava || onShowRoutes) && (
         <div
           style={{ position: "absolute", left: menu.x, top: menu.y, zIndex: 1000,
                    background: "#16213A", border: "1px solid #334155", borderRadius: 8,
@@ -190,7 +191,12 @@ export default function MapView({ points, progressIndex, markerColor: _markerCol
               style={{ background: "transparent", color: "#F1F5F9", border: "none",
                        padding: "8px 14px", cursor: "pointer", fontSize: 14, whiteSpace: "nowrap",
                        display: "block", width: "100%", textAlign: "left" }}
-            >⤓ Upload GPX file</button>
+            >⤓ Upload GPX file(s)</button>
+          )}
+          {onShowRoutes && (
+            <button onClick={() => { setMenu(null); onShowRoutes(); }}
+              style={{ background: "transparent", color: "#F1F5F9", border: "none", padding: "8px 14px", cursor: "pointer", fontSize: 14, whiteSpace: "nowrap", display: "block", width: "100%", textAlign: "left" }}
+            >☰ Show route list</button>
           )}
           {onRequestStrava && (
             <button onClick={() => { setMenu(null); onRequestStrava(); }}

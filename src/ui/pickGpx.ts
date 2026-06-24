@@ -36,3 +36,20 @@ export async function pickGpx(): Promise<PickedGpx | null> {
 
   return { name: asset.name ?? "Imported run", xml };
 }
+
+/**
+ * Open a document picker allowing multiple .gpx files to be selected.
+ * Returns an array of { name, xml } for each picked file, or [] if cancelled.
+ */
+export async function pickMultipleGpx(): Promise<PickedGpx[]> {
+  const result = await DocumentPicker.getDocumentAsync({ type: "*/*", multiple: true, copyToCacheDirectory: true });
+  if (result.canceled || !result.assets || result.assets.length === 0) return [];
+  const out: PickedGpx[] = [];
+  for (const asset of result.assets) {
+    let xml: string;
+    if (Platform.OS === "web") { const res = await fetch(asset.uri); xml = await res.text(); }
+    else { xml = await FileSystem.readAsStringAsync(asset.uri); }
+    out.push({ name: asset.name ?? "Imported run", xml });
+  }
+  return out;
+}
