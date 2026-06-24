@@ -146,7 +146,7 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
       <Text variant="titleMedium" style={styles.title}>{runTitle}</Text>
       <Surface style={styles.mapSection} elevation={1}>
         <View style={styles.mapBox}>
-          <MapView points={run.points} progressIndex={engine.fractionalIndex} markerColor={markerColor} onRequestImport={handleImport} />
+          <MapView points={run.points} progressIndex={engine.fractionalIndex} markerColor={markerColor} cumulative={cumulative} onRequestImport={handleImport} />
         </View>
         <ElevationProfile
           points={run.points}

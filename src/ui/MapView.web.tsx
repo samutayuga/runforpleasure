@@ -17,6 +17,7 @@ export interface MapViewProps {
   points: TrackPoint[];
   progressIndex: number;
   markerColor: string;
+  cumulative: number[];
   onRequestImport?: () => void;
 }
 
@@ -33,7 +34,7 @@ if (typeof document !== "undefined" && !document.getElementById("runner-anim-sty
   document.head.appendChild(style);
 }
 
-export default function MapView({ points, progressIndex, markerColor: _markerColor, onRequestImport }: MapViewProps): React.JSX.Element {
+export default function MapView({ points, progressIndex, markerColor: _markerColor, cumulative, onRequestImport }: MapViewProps): React.JSX.Element {
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
 
   const latlngs = useMemo<LatLngExpression[]>(() => points.map((p) => [p.lat, p.lon]), [points]);
@@ -98,6 +99,33 @@ export default function MapView({ points, progressIndex, markerColor: _markerCol
     [latlngs, i, markerPos],
   );
 
+  const kmMarkers = useMemo(() => {
+    const out: Array<{ pos: [number, number]; label: string }> = [];
+    const total = cumulative.length ? cumulative[cumulative.length - 1] : 0;
+    for (let km = 1; km * 1000 <= total; km++) {
+      const target = km * 1000;
+      let idx = -1;
+      for (let k = 1; k < cumulative.length; k++) { if (cumulative[k] >= target) { idx = k; break; } }
+      if (idx <= 0) continue;
+      const d0 = cumulative[idx - 1], d1 = cumulative[idx];
+      const f = d1 === d0 ? 0 : (target - d0) / (d1 - d0);
+      const p0 = points[idx - 1], p1 = points[idx];
+      out.push({ pos: [p0.lat + (p1.lat - p0.lat) * f, p0.lon + (p1.lon - p0.lon) * f], label: String(km) });
+    }
+    return out;
+  }, [points, cumulative]);
+
+  const kmIcon = (label: string) =>
+    L.divIcon({
+      html:
+        `<div style="background:#0B1220;color:#F8FAFC;font-size:10px;font-weight:700;` +
+        `padding:1px 5px;border-radius:9px;border:1.5px solid #F97316;white-space:nowrap;` +
+        `box-shadow:0 1px 2px rgba(0,0,0,0.5)">${label}k</div>`,
+      className: "km-marker",
+      iconSize: [22, 16],
+      iconAnchor: [11, 8],
+    });
+
   return (
     <div
       style={{ position: "relative", width: "100%", height: "100%" }}
@@ -115,6 +143,10 @@ export default function MapView({ points, progressIndex, markerColor: _markerCol
         <Polyline positions={latlngs} pathOptions={{ color: "#1D4ED8", weight: 4 }} />
         {/* passed portion: strong orange on top */}
         <Polyline positions={passed} pathOptions={{ color: "#EA580C", weight: 6 }} />
+        {/* km markers: labeled every 1 km along the route, below the runner */}
+        {kmMarkers.map((m) => (
+          <Marker key={m.label} position={m.pos} icon={kmIcon(m.label)} interactive={false} />
+        ))}
         {/* position marker: running-person emoji gliding along the route */}
         <Marker position={markerPos} icon={runnerIcon} />
         <FitBounds bounds={bounds} />

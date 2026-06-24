@@ -6,6 +6,7 @@ export interface MapViewProps {
   points: TrackPoint[];
   progressIndex: number;
   markerColor: string;
+  cumulative: number[];
   onRequestImport?: () => void;
 }
 
