@@ -12,8 +12,11 @@ export interface PickedGpx {
  * or null if the user cancelled.
  */
 export async function pickGpx(): Promise<PickedGpx | null> {
+  // Use a wide-open type so the OS file dialog never greys out .gpx files —
+  // .gpx has no reliably-registered MIME type, so a specific accept list can
+  // leave the file disabled. We validate by parsing instead of by MIME.
   const result = await DocumentPicker.getDocumentAsync({
-    type: ["application/gpx+xml", "application/xml", "text/xml", "*/*"],
+    type: "*/*",
     copyToCacheDirectory: true,
   });
 
