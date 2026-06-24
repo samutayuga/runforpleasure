@@ -97,7 +97,7 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
     };
     node.addEventListener("wheel", onWheel, { passive: false });
     return () => node.removeEventListener("wheel", onWheel);
-  }, []);
+  }, [run]);
 
   const cumulative = useMemo(
     () => (run ? cumulativeDistances(run.points) : []),
