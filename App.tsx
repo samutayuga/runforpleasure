@@ -1,20 +1,26 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState } from "react";
+import { SafeAreaView, StyleSheet } from "react-native";
+import { StatusBar } from "expo-status-bar";
+import { RunScreen } from "./src/ui/RunScreen";
+import { ProfileScreen } from "./src/ui/ProfileScreen";
+import type { Profile } from "./src/core/karvonen";
 
-export default function App() {
+export default function App(): React.JSX.Element {
+  const [profile, setProfile] = useState<Profile>({ age: 35, restingHr: 60 });
+  const [editing, setEditing] = useState(true);
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
+    <SafeAreaView style={styles.root}>
       <StatusBar style="auto" />
-    </View>
+      {editing ? (
+        <ProfileScreen profile={profile} onChange={setProfile} onDone={() => setEditing(false)} />
+      ) : (
+        <RunScreen profile={profile} />
+      )}
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  root: { flex: 1, backgroundColor: "#fff" },
 });
