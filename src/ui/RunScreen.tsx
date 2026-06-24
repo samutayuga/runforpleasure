@@ -15,6 +15,7 @@ const SPEEDS = [1, 4, 8];
 
 export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element {
   const [run, setRun] = useState<Run | null>(null);
+  const [error, setError] = useState(false);
   const [, force] = useState(0);
   const engineRef = useRef<ReplayEngine | null>(null);
   const speedIdx = useRef(0);
@@ -22,12 +23,18 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
 
   useEffect(() => {
     let cancelled = false;
-    loadSampleGpx().then((xml) => {
-      if (cancelled) return;
-      const parsed = parseGpx(xml);
-      setRun(parsed);
-      engineRef.current = new ReplayEngine(parsed.points, SPEEDS[0]);
-    });
+    loadSampleGpx()
+      .then((xml) => {
+        if (cancelled) return;
+        const parsed = parseGpx(xml);
+        setRun(parsed);
+        engineRef.current = new ReplayEngine(parsed.points, SPEEDS[0]);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.error(err);
+        setError(true);
+      });
     return () => {
       cancelled = true;
     };
@@ -52,6 +59,14 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
     () => (run ? cumulativeDistances(run.points) : []),
     [run],
   );
+
+  if (error) {
+    return (
+      <View style={styles.center}>
+        <Text>Could not load run. Please try again.</Text>
+      </View>
+    );
+  }
 
   if (!run || !engineRef.current) {
     return (
