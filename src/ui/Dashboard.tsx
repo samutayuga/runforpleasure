@@ -1,10 +1,19 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { Surface, Button } from "react-native-paper";
+import { View, Text, StyleSheet, Pressable } from "react-native";
+import { Surface } from "react-native-paper";
+import { Ionicons } from "@expo/vector-icons";
 import type { LiveMetrics } from "../core/metrics";
 import { formatDuration, formatDistance, formatPace } from "../core/format";
 import { ZONE_THEME } from "./theme";
+import type { ZoneId } from "../core/karvonen";
 import type { Weather } from "./weather";
+
+const EFFORT: Record<ZoneId, { i: number; word: string; emoji: string }> = {
+  below: { i: 0, word: "Recovery", emoji: "😌" },
+  zone2: { i: 1, word: "Easy",     emoji: "🙂" },
+  zone3: { i: 2, word: "Tempo",    emoji: "😤" },
+  above: { i: 3, word: "Hard",     emoji: "🥵" },
+};
 
 function formatClock(d: Date): string {
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -31,8 +40,9 @@ export function Dashboard({
   onRestart: () => void;
   onCycleSpeed: () => void;
 }): React.JSX.Element {
-  const zone = metrics.zone ? ZONE_THEME[metrics.zone] : null;
-  const zoneColor = zone?.color ?? "#94A3B8";
+  const z = metrics.zone;
+  const eff = z ? EFFORT[z] : null;
+  const zoneColor = z ? ZONE_THEME[z].color : "#94A3B8";
 
   return (
     <View style={styles.wrap}>
@@ -49,9 +59,27 @@ export function Dashboard({
 
           {/* CENTER hero */}
           <View style={styles.centerCol}>
-            <View style={[styles.zonePill, { backgroundColor: zoneColor }]}>
-              <Text style={styles.pillIcon}>{zone?.icon ?? "•"}</Text>
-              <Text style={styles.pillLabel}>{zone?.label ?? "Zone N/A"}</Text>
+            {/* Zone meter */}
+            <View style={{ flexDirection: "row", width: 150 }}>
+              {[0, 1, 2, 3].map((i) => (
+                <View
+                  key={i}
+                  style={{
+                    flex: 1,
+                    height: 6,
+                    borderRadius: 3,
+                    marginHorizontal: 2,
+                    backgroundColor: eff && i <= eff.i ? zoneColor : "#334155",
+                  }}
+                />
+              ))}
+            </View>
+            {/* Effort emoji + word */}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <Text style={{ fontSize: 15 }}>{eff?.emoji ?? "—"}</Text>
+              <Text style={{ fontSize: 15, fontWeight: "700", color: zoneColor }}>
+                {eff?.word ?? "Zone N/A"}
+              </Text>
             </View>
             <Text style={styles.hrLine}>
               <Text style={styles.hrNum}>{metrics.hr ?? "--"}</Text>
@@ -83,15 +111,30 @@ export function Dashboard({
 
         {/* Controls row */}
         <View style={styles.controls}>
-          <Button mode="contained-tonal" onPress={onPlayPause} accessibilityLabel={playing ? "Pause" : "Play"}>
-            {playing ? "Pause" : "Play"}
-          </Button>
-          <Button mode="contained-tonal" onPress={onCycleSpeed} accessibilityLabel={`${speed}x`}>
-            {`${speed}x`}
-          </Button>
-          <Button mode="contained-tonal" onPress={onRestart} accessibilityLabel="Restart">
-            Restart
-          </Button>
+          <Pressable
+            onPress={onPlayPause}
+            accessibilityRole="button"
+            accessibilityLabel={playing ? "Pause" : "Play"}
+            style={styles.iconBtn}
+          >
+            <Ionicons name={playing ? "pause" : "play"} size={24} color="#F1F5F9" />
+          </Pressable>
+          <Pressable
+            onPress={onCycleSpeed}
+            accessibilityRole="button"
+            accessibilityLabel="Cycle speed"
+            style={styles.iconBtn}
+          >
+            <Text style={styles.speedText}>{`${speed}x`}</Text>
+          </Pressable>
+          <Pressable
+            onPress={onRestart}
+            accessibilityRole="button"
+            accessibilityLabel="Restart"
+            style={styles.iconBtn}
+          >
+            <Ionicons name="refresh" size={22} color="#F1F5F9" />
+          </Pressable>
         </View>
       </Surface>
     </View>
@@ -124,16 +167,6 @@ const styles = StyleSheet.create({
   leftCol: { flex: 1, alignItems: "flex-start", gap: 10 },
   centerCol: { flexShrink: 0, alignItems: "center", paddingHorizontal: 10, gap: 8 },
   rightCol: { flex: 1, alignItems: "flex-end", gap: 10 },
-  zonePill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  pillIcon: { fontSize: 15 },
-  pillLabel: { color: "#FFFFFF", fontSize: 14, fontWeight: "700", letterSpacing: 0.3 },
   hrLine: { textAlign: "center" },
   hrNum: { fontSize: 46, fontWeight: "800", color: "#F1F5F9" },
   hrUnit: { fontSize: 16, fontWeight: "600", color: "#94A3B8" },
@@ -141,4 +174,15 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 15, fontWeight: "600", color: "#F1F5F9" },
   statLabel: { fontSize: 10, color: "#94A3B8", marginTop: 2 },
   controls: { flexDirection: "row", justifyContent: "center", gap: 12 },
+  iconBtn: {
+    minWidth: 56,
+    minHeight: 48,
+    borderRadius: 12,
+    backgroundColor: "#1E293B",
+    borderWidth: 1,
+    borderColor: "#334155",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  speedText: { fontSize: 15, fontWeight: "700", color: "#F1F5F9" },
 });
