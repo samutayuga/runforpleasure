@@ -20,6 +20,7 @@ import { fetchSurfaceAlongRoute } from "./osmSurface";
 import type { SurfaceSample } from "./osmSurface";
 import { SurfaceStrip } from "./SurfaceStrip";
 import { StravaPanel } from "./StravaPanel";
+import { reverseGeocode } from "./geocode";
 
 const SPEEDS = [1, 4, 8];
 
@@ -27,6 +28,8 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
   const [run, setRun] = useState<Run | null>(null);
   const [weather, setWeather] = useState<Weather | null>(null);
   const [surfaces, setSurfaces] = useState<SurfaceSample[]>([]);
+  const [startPlace, setStartPlace] = useState<string | null>(null);
+  const [endPlace, setEndPlace] = useState<string | null>(null);
   const [error, setError] = useState(false);
   const [stravaOpen, setStravaOpen] = useState(false);
   const [, force] = useState(0);
@@ -77,6 +80,19 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
       if (!cancelled) setSurfaces(s);
     });
     return () => { cancelled = true; };
+  }, [run]);
+
+  useEffect(() => {
+    setStartPlace(null);
+    setEndPlace(null);
+    if (!run || run.points.length === 0) return;
+    let cancelled = false;
+    const first = run.points[0], last = run.points[run.points.length - 1];
+    reverseGeocode(first.lat, first.lon).then((n) => { if (!cancelled) setStartPlace(n); });
+    const t = setTimeout(() => {
+      reverseGeocode(last.lat, last.lon).then((n) => { if (!cancelled) setEndPlace(n); });
+    }, 1100);
+    return () => { cancelled = true; clearTimeout(t); };
   }, [run]);
 
   useEffect(() => {
@@ -167,6 +183,8 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
         startTime={run.points[0].time}
         endTime={run.points[run.points.length - 1].time}
         weather={weather}
+        startPlace={startPlace}
+        endPlace={endPlace}
         onPlayPause={() => {
           engine.playing ? engine.pause() : engine.play();
           force((n) => n + 1);

@@ -26,6 +26,8 @@ export function Dashboard({
   startTime,
   endTime,
   weather,
+  startPlace,
+  endPlace,
   onPlayPause,
   onRestart,
   onCycleSpeed,
@@ -36,6 +38,8 @@ export function Dashboard({
   startTime: Date;
   endTime: Date;
   weather: Weather | null;
+  startPlace?: string | null;
+  endPlace?: string | null;
   onPlayPause: () => void;
   onRestart: () => void;
   onCycleSpeed: () => void;
@@ -54,7 +58,7 @@ export function Dashboard({
             <Stat icon="timer-outline" label="Elapsed" value={formatDuration(metrics.elapsedSec)} align="flex-start" />
             <Stat icon="map-marker-distance" label="Distance" value={formatDistance(metrics.distanceMeters)} align="flex-start" />
             <Stat icon="speedometer" label="Pace" value={formatPace(metrics.paceMinPerKm)} align="flex-start" />
-            <Stat icon="clock-start" label="Start" value={formatClock(startTime)} align="flex-start" />
+            <Stat icon="clock-start" label="Start" value={formatClock(startTime)} align="flex-start" sub={startPlace} />
           </View>
 
           {/* Divider left */}
@@ -100,7 +104,7 @@ export function Dashboard({
 
           {/* RIGHT column */}
           <View style={styles.rightCol}>
-            <Stat icon="clock-end" label="End" value={formatClock(endTime)} align="flex-end" />
+            <Stat icon="clock-end" label="End" value={formatClock(endTime)} align="flex-end" sub={endPlace} />
             <Stat
               icon="thermometer"
               label="Temp"
@@ -154,11 +158,12 @@ export function Dashboard({
   );
 }
 
-function Stat({ icon, label, value, align }: {
+function Stat({ icon, label, value, align, sub }: {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
   label: string;
   value: string;
   align: "flex-start" | "flex-end";
+  sub?: string | null;
 }): React.JSX.Element {
   return (
     <View style={{ alignItems: align, gap: 2 }}>
@@ -167,6 +172,7 @@ function Stat({ icon, label, value, align }: {
         <Text style={styles.statValue}>{value}</Text>
       </View>
       <Text style={styles.statLabel}>{label}</Text>
+      {sub ? <Text style={styles.statSub} numberOfLines={1}>{sub}</Text> : null}
     </View>
   );
 }
@@ -195,6 +201,7 @@ const styles = StyleSheet.create({
   condition: { fontSize: 12, color: "#94A3B8" },
   statValue: { fontSize: 15, fontWeight: "600", color: "#F1F5F9" },
   statLabel: { fontSize: 10, color: "#64748B", letterSpacing: 0.3, marginTop: 2, textTransform: "uppercase" },
+  statSub: { fontSize: 9, color: "#64748B", maxWidth: 90 },
   controls: { flexDirection: "row", justifyContent: "center", gap: 12 },
   iconBtn: {
     minWidth: 56,

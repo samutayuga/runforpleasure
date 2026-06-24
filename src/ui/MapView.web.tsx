@@ -1,8 +1,11 @@
 import "leaflet/dist/leaflet.css";
 import React, { useEffect, useMemo, useState } from "react";
 import L from "leaflet";
-import { MapContainer, TileLayer, Polyline, Marker, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap } from "react-leaflet";
 import type { LatLngExpression, LatLngBoundsExpression } from "leaflet";
+import { reverseGeocode } from "./geocode";
+
+import type { TrackPoint } from "../core/types";
 
 function FitBounds({ bounds }: { bounds: LatLngBoundsExpression }): null {
   const map = useMap();
@@ -11,7 +14,6 @@ function FitBounds({ bounds }: { bounds: LatLngBoundsExpression }): null {
   }, [map, bounds]);
   return null;
 }
-import type { TrackPoint } from "../core/types";
 
 export interface MapViewProps {
   points: TrackPoint[];
@@ -33,6 +35,35 @@ if (typeof document !== "undefined" && !document.getElementById("runner-anim-sty
     ".rn-b{animation:rnStepB .36s steps(1) infinite}" +
     ".rn-bob{animation:rnBob .36s ease-in-out infinite}";
   document.head.appendChild(style);
+}
+
+function kmIcon(label: string): L.DivIcon {
+  return L.divIcon({
+    html:
+      `<div style="background:#0B1220;color:#F8FAFC;font-size:10px;font-weight:700;` +
+      `padding:1px 5px;border-radius:9px;border:1.5px solid #F97316;white-space:nowrap;` +
+      `box-shadow:0 1px 2px rgba(0,0,0,0.5)">${label}k</div>`,
+    className: "km-marker",
+    iconSize: [22, 16],
+    iconAnchor: [11, 8],
+  });
+}
+
+function KmMarker({ pos, label }: { pos: [number, number]; label: string }): React.JSX.Element {
+  const [name, setName] = useState<string | null>(null);
+  return (
+    <Marker
+      position={pos}
+      icon={kmIcon(label)}
+      eventHandlers={{
+        popupopen: async () => {
+          if (name === null) setName((await reverseGeocode(pos[0], pos[1])) ?? "Unknown area");
+        },
+      }}
+    >
+      <Popup>{`${label} km · ${name ?? "Locating…"}`}</Popup>
+    </Marker>
+  );
 }
 
 export default function MapView({ points, progressIndex, markerColor: _markerColor, cumulative, onRequestImport, onRequestStrava }: MapViewProps): React.JSX.Element {
@@ -116,17 +147,6 @@ export default function MapView({ points, progressIndex, markerColor: _markerCol
     return out;
   }, [points, cumulative]);
 
-  const kmIcon = (label: string) =>
-    L.divIcon({
-      html:
-        `<div style="background:#0B1220;color:#F8FAFC;font-size:10px;font-weight:700;` +
-        `padding:1px 5px;border-radius:9px;border:1.5px solid #F97316;white-space:nowrap;` +
-        `box-shadow:0 1px 2px rgba(0,0,0,0.5)">${label}k</div>`,
-      className: "km-marker",
-      iconSize: [22, 16],
-      iconAnchor: [11, 8],
-    });
-
   return (
     <div
       style={{ position: "relative", width: "100%", height: "100%" }}
@@ -135,8 +155,10 @@ export default function MapView({ points, progressIndex, markerColor: _markerCol
     >
       <MapContainer bounds={bounds} style={{ width: "100%", height: "100%" }} scrollWheelZoom>
         <TileLayer
-          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; OpenStreetMap contributors'
+          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
+          subdomains="abcd"
+          attribution='&copy; OpenStreetMap contributors &copy; CARTO'
+          maxZoom={20}
         />
         {/* white casing under the whole route for contrast on light tiles */}
         <Polyline positions={latlngs} pathOptions={{ color: "#FFFFFF", weight: 8, opacity: 0.9 }} />
@@ -145,9 +167,7 @@ export default function MapView({ points, progressIndex, markerColor: _markerCol
         {/* passed portion: strong orange on top */}
         <Polyline positions={passed} pathOptions={{ color: "#EA580C", weight: 6 }} />
         {/* km markers: labeled every 1 km along the route, below the runner */}
-        {kmMarkers.map((m) => (
-          <Marker key={m.label} position={m.pos} icon={kmIcon(m.label)} interactive={false} />
-        ))}
+        {kmMarkers.map((m) => <KmMarker key={m.label} pos={m.pos} label={m.label} />)}
         {/* position marker: running-person emoji gliding along the route */}
         <Marker position={markerPos} icon={runnerIcon} />
         <FitBounds bounds={bounds} />
