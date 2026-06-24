@@ -113,7 +113,7 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
       >
         <Text style={styles.importButtonText}>Import GPX</Text>
       </Pressable>
-      <RouteView points={run.points} currentIndex={engine.index} markerColor={markerColor} />
+      <RouteView points={run.points} currentIndex={engine.fractionalIndex} markerColor={markerColor} />
       <Dashboard
         metrics={metrics}
         playing={engine.playing}
