@@ -88,7 +88,14 @@ export function StravaPanel({ visible, onClose, onSelectTrack }: StravaPanelProp
               <Text style={styles.helpHead}>Strava now restricts API access — it often requires an approved (and sometimes paid) developer agreement. So there are two ways:</Text>
 
               <Text style={styles.helpHead}>① Recommended — free, no token, no API:</Text>
-              <Text style={styles.helpStep}>Export the run from Strava as GPX: open the activity → the "···" menu → "Export GPX" (or bulk-export all activities under Settings → My Account → Download or Delete Your Account). Both are free for any Strava user.</Text>
+              <Text style={styles.helpStep}>Per activity (web only): open the activity on strava.com → the "···" menu → "Export GPX".</Text>
+              <Text style={styles.helpStep}>Bulk (all activities): Settings → My Account → "Download or Delete Your Account" → Get Started → "Request Your Archive". Strava emails a ZIP; its activities/ folder holds the GPX files.</Text>
+              <Text
+                style={styles.link}
+                onPress={() => { void Linking.openURL("https://www.strava.com/athlete/delete_your_account"); }}
+              >
+                Open Strava bulk-export page
+              </Text>
               <Text style={styles.helpStep}>Then close this panel, right-click the map, and choose "Upload GPX file". Done — no token needed.</Text>
 
               <Text style={styles.helpHead}>② If you have API token access:</Text>
