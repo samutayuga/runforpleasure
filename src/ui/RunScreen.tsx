@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { View, ActivityIndicator, StyleSheet, ScrollView } from "react-native";
+import { View, ActivityIndicator, StyleSheet, Platform } from "react-native";
 import { Text, Button, Surface } from "react-native-paper";
+import { GestureDetector, Gesture } from "react-native-gesture-handler";
 import { parseGpx } from "../core/gpxParser";
 import { cumulativeDistances } from "../core/geo";
 import { ReplayEngine } from "../core/replayEngine";
@@ -17,16 +18,29 @@ import type { Weather } from "./weather";
 
 const SPEEDS = [1, 4, 8];
 const MAP_BASE = 280;
+const PANEL = 300;
+const MIN_SCALE = 1;
+const MAX_SCALE = 4;
+const clampScale = (s: number) => Math.max(MIN_SCALE, Math.min(MAX_SCALE, s));
+const maxPan = (s: number) => Math.max(0, (MAP_BASE * s - PANEL) / 2 + 30);
+const clampPan = (v: number, s: number) => Math.max(-maxPan(s), Math.min(maxPan(s), v));
 
 export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element {
   const [run, setRun] = useState<Run | null>(null);
   const [weather, setWeather] = useState<Weather | null>(null);
   const [error, setError] = useState(false);
   const [, force] = useState(0);
-  const [zoom, setZoom] = useState(1);
   const engineRef = useRef<ReplayEngine | null>(null);
   const speedIdx = useRef(0);
   const lastTs = useRef<number | null>(null);
+
+  const [scale, setScale] = useState(1);
+  const [tx, setTx] = useState(0);
+  const [ty, setTy] = useState(0);
+  const scaleStart = useRef(1);
+  const txStart = useRef(0);
+  const tyStart = useRef(0);
+  const mapWrapRef = useRef<View>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -73,10 +87,37 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
     return () => cancelAnimationFrame(raf);
   }, []);
 
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+    const node = mapWrapRef.current as unknown as HTMLElement | null;
+    if (!node || typeof node.addEventListener !== "function") return;
+    const onWheel = (ev: WheelEvent) => {
+      ev.preventDefault();
+      setScale((s) => clampScale(s - ev.deltaY * 0.002));
+    };
+    node.addEventListener("wheel", onWheel, { passive: false });
+    return () => node.removeEventListener("wheel", onWheel);
+  }, []);
+
   const cumulative = useMemo(
     () => (run ? cumulativeDistances(run.points) : []),
     [run],
   );
+
+  const pinch = Gesture.Pinch()
+    .runOnJS(true)
+    .onStart(() => { scaleStart.current = scale; })
+    .onUpdate((e) => { setScale(clampScale(scaleStart.current * e.scale)); });
+
+  const pan = Gesture.Pan()
+    .runOnJS(true)
+    .onStart(() => { txStart.current = tx; tyStart.current = ty; })
+    .onUpdate((e) => {
+      setTx(clampPan(txStart.current + e.translationX, scale));
+      setTy(clampPan(tyStart.current + e.translationY, scale));
+    });
+
+  const mapGesture = Gesture.Simultaneous(pinch, pan);
 
   if (error) {
     return (
@@ -98,7 +139,6 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
   const engine = engineRef.current;
   const metrics = deriveMetrics(run, cumulative, engine.index, profile);
   const markerColor = metrics.zone ? ZONE_THEME[metrics.zone].color : "#6B7280";
-  const mapSize = Math.round(MAP_BASE * zoom);
 
   const handleImport = async () => {
     try {
@@ -130,38 +170,23 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
       >
         Import GPX
       </Button>
-      <Surface style={styles.mapPanel} elevation={2}>
-        <ScrollView
-          style={styles.mapScrollOuter}
-          contentContainerStyle={{ height: mapSize }}
-          showsVerticalScrollIndicator
-        >
-          <ScrollView
-            horizontal
-            contentContainerStyle={{ width: mapSize }}
-            showsHorizontalScrollIndicator
+      <Surface style={styles.mapPanel} elevation={1}>
+        <GestureDetector gesture={mapGesture}>
+          <View
+            ref={mapWrapRef}
+            style={{ width: "100%", height: "100%", alignItems: "center", justifyContent: "center" }}
           >
-            <RouteView points={run.points} currentIndex={engine.fractionalIndex} markerColor={markerColor} size={mapSize} />
-          </ScrollView>
-        </ScrollView>
+            <View style={{ transform: [{ translateX: tx }, { translateY: ty }, { scale }] }}>
+              <RouteView
+                points={run.points}
+                currentIndex={engine.fractionalIndex}
+                markerColor={markerColor}
+                size={MAP_BASE}
+              />
+            </View>
+          </View>
+        </GestureDetector>
       </Surface>
-      <View style={styles.zoomRow}>
-        <Button
-          mode="contained-tonal"
-          compact
-          onPress={() => setZoom((z) => Math.max(1, +(z - 0.5).toFixed(1)))}
-        >
-          {"–"}
-        </Button>
-        <Text style={styles.zoomLabel}>{`${zoom}×`}</Text>
-        <Button
-          mode="contained-tonal"
-          compact
-          onPress={() => setZoom((z) => Math.min(4, +(z + 0.5).toFixed(1)))}
-        >
-          {"+"}
-        </Button>
-      </View>
       <Dashboard
         metrics={metrics}
         playing={engine.playing}
@@ -193,24 +218,12 @@ const styles = StyleSheet.create({
   title: { color: "#F1F5F9" },
   statusText: { color: "#F1F5F9" },
   mapPanel: {
+    width: "100%",
+    maxWidth: 360,
+    height: 300,
     borderRadius: 16,
     backgroundColor: "#0F1A2E",
     overflow: "hidden",
-    height: 300,
-    width: 304,
-  },
-  mapScrollOuter: {
-    flex: 1,
-  },
-  zoomRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  zoomLabel: {
-    color: "#F1F5F9",
-    fontSize: 14,
-    minWidth: 36,
-    textAlign: "center",
+    alignSelf: "center",
   },
 });
