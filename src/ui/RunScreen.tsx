@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
+import { View, Text, ActivityIndicator, StyleSheet, Pressable } from "react-native";
 import { parseGpx } from "../core/gpxParser";
 import { cumulativeDistances } from "../core/geo";
 import { ReplayEngine } from "../core/replayEngine";
@@ -10,6 +10,7 @@ import { ZONE_THEME } from "./theme";
 import { RouteView } from "./RouteView";
 import { Dashboard } from "./Dashboard";
 import { loadSampleGpx } from "./loadSampleGpx";
+import { pickGpx } from "./pickGpx";
 
 const SPEEDS = [1, 4, 8];
 
@@ -81,9 +82,37 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
   const metrics = deriveMetrics(run, cumulative, engine.index, profile);
   const markerColor = metrics.zone ? ZONE_THEME[metrics.zone].color : "#6B7280";
 
+  const handleImport = async () => {
+    try {
+      const picked = await pickGpx();
+      if (!picked) return;
+      const parsed = parseGpx(picked.xml);
+      if (parsed.points.length === 0) {
+        setError(true);
+        return;
+      }
+      setRun(parsed);
+      engineRef.current = new ReplayEngine(parsed.points, SPEEDS[speedIdx.current]);
+      lastTs.current = null;
+      setError(false);
+      force((n) => n + 1);
+    } catch (err) {
+      console.error(err);
+      setError(true);
+    }
+  };
+
   return (
     <View style={styles.screen}>
       <Text style={styles.title}>{run.name}</Text>
+      <Pressable
+        style={styles.importButton}
+        onPress={() => { void handleImport(); }}
+        accessibilityRole="button"
+        accessibilityLabel="Import GPX"
+      >
+        <Text style={styles.importButtonText}>Import GPX</Text>
+      </Pressable>
       <RouteView points={run.points} currentIndex={engine.index} markerColor={markerColor} />
       <Dashboard
         metrics={metrics}
@@ -111,4 +140,14 @@ const styles = StyleSheet.create({
   screen: { flex: 1, alignItems: "center", justifyContent: "center", gap: 20, padding: 16 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 8 },
   title: { fontSize: 18, fontWeight: "600" },
+  importButton: {
+    minHeight: 48,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: "#E5E7EB",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  importButtonText: { fontSize: 15, fontWeight: "500", color: "#111827" },
 });
