@@ -8,6 +8,7 @@ export interface MapViewProps {
   markerColor: string;
   cumulative: number[];
   onRequestImport?: () => void;
+  onRequestStrava?: () => void;
 }
 
 export default function MapView({ points, progressIndex, markerColor }: MapViewProps): React.JSX.Element {

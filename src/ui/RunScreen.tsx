@@ -6,7 +6,7 @@ import { cumulativeDistances } from "../core/geo";
 import { ReplayEngine } from "../core/replayEngine";
 import { deriveMetrics } from "../core/metrics";
 import { characterizeRun } from "../core/characterize";
-import type { Run } from "../core/types";
+import type { Run, TrackPoint } from "../core/types";
 import type { Profile } from "../core/karvonen";
 import { ZONE_THEME } from "./theme";
 import MapView from "./MapView";
@@ -19,6 +19,7 @@ import type { Weather } from "./weather";
 import { fetchSurfaceAlongRoute } from "./osmSurface";
 import type { SurfaceSample } from "./osmSurface";
 import { SurfaceStrip } from "./SurfaceStrip";
+import { StravaPanel } from "./StravaPanel";
 
 const SPEEDS = [1, 4, 8];
 
@@ -27,6 +28,7 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
   const [weather, setWeather] = useState<Weather | null>(null);
   const [surfaces, setSurfaces] = useState<SurfaceSample[]>([]);
   const [error, setError] = useState(false);
+  const [stravaOpen, setStravaOpen] = useState(false);
   const [, force] = useState(0);
   const engineRef = useRef<ReplayEngine | null>(null);
   const speedIdx = useRef(0);
@@ -118,20 +120,21 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
   const metrics = deriveMetrics(run, cumulative, engine.index, profile);
   const markerColor = metrics.zone ? ZONE_THEME[metrics.zone].color : "#6B7280";
 
+  const applyRun = (name: string, pts: TrackPoint[]) => {
+    if (pts.length === 0) { setError(true); return; }
+    setRun({ name, points: pts });
+    engineRef.current = new ReplayEngine(pts, SPEEDS[speedIdx.current]);
+    lastTs.current = null;
+    setError(false);
+    force((n) => n + 1);
+  };
+
   const handleImport = async () => {
     try {
       const picked = await pickGpx();
       if (!picked) return;
       const parsed = parseGpx(picked.xml);
-      if (parsed.points.length === 0) {
-        setError(true);
-        return;
-      }
-      setRun(parsed);
-      engineRef.current = new ReplayEngine(parsed.points, SPEEDS[speedIdx.current]);
-      lastTs.current = null;
-      setError(false);
-      force((n) => n + 1);
+      applyRun(parsed.name, parsed.points);
     } catch (err) {
       console.error(err);
       setError(true);
@@ -146,7 +149,7 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
       <Text variant="titleMedium" style={styles.title}>{runTitle}</Text>
       <Surface style={styles.mapSection} elevation={1}>
         <View style={styles.mapBox}>
-          <MapView points={run.points} progressIndex={engine.fractionalIndex} markerColor={markerColor} cumulative={cumulative} onRequestImport={handleImport} />
+          <MapView points={run.points} progressIndex={engine.fractionalIndex} markerColor={markerColor} cumulative={cumulative} onRequestImport={handleImport} onRequestStrava={() => setStravaOpen(true)} />
         </View>
         <ElevationProfile
           points={run.points}
@@ -177,6 +180,11 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
           engine.setSpeed(SPEEDS[speedIdx.current]);
           force((n) => n + 1);
         }}
+      />
+      <StravaPanel
+        visible={stravaOpen}
+        onClose={() => setStravaOpen(false)}
+        onSelectTrack={(name, pts) => { applyRun(name, pts); setStravaOpen(false); }}
       />
     </ScrollView>
   );

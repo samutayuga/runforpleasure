@@ -19,6 +19,7 @@ export interface MapViewProps {
   markerColor: string;
   cumulative: number[];
   onRequestImport?: () => void;
+  onRequestStrava?: () => void;
 }
 
 if (typeof document !== "undefined" && !document.getElementById("runner-anim-style")) {
@@ -34,7 +35,7 @@ if (typeof document !== "undefined" && !document.getElementById("runner-anim-sty
   document.head.appendChild(style);
 }
 
-export default function MapView({ points, progressIndex, markerColor: _markerColor, cumulative, onRequestImport }: MapViewProps): React.JSX.Element {
+export default function MapView({ points, progressIndex, markerColor: _markerColor, cumulative, onRequestImport, onRequestStrava }: MapViewProps): React.JSX.Element {
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
 
   const latlngs = useMemo<LatLngExpression[]>(() => points.map((p) => [p.lat, p.lon]), [points]);
@@ -154,20 +155,28 @@ export default function MapView({ points, progressIndex, markerColor: _markerCol
       {/* hint label */}
       <div style={{ position: "absolute", top: 8, left: 8, zIndex: 999, pointerEvents: "none",
                     background: "rgba(11,18,32,0.7)", color: "#CBD5E1", fontSize: 11,
-                    padding: "3px 8px", borderRadius: 6 }}>Right-click to upload a GPX</div>
+                    padding: "3px 8px", borderRadius: 6 }}>Right-click for upload / Strava</div>
       {/* context menu */}
-      {menu && onRequestImport && (
+      {menu && (onRequestImport || onRequestStrava) && (
         <div
           style={{ position: "absolute", left: menu.x, top: menu.y, zIndex: 1000,
                    background: "#16213A", border: "1px solid #334155", borderRadius: 8,
                    padding: 4, boxShadow: "0 4px 12px rgba(0,0,0,0.4)" }}
           onMouseLeave={() => setMenu(null)}
         >
-          <button
-            onClick={() => { setMenu(null); onRequestImport(); }}
-            style={{ background: "transparent", color: "#F1F5F9", border: "none",
-                     padding: "8px 14px", cursor: "pointer", fontSize: 14, whiteSpace: "nowrap" }}
-          >⤓ Upload GPX file</button>
+          {onRequestImport && (
+            <button
+              onClick={() => { setMenu(null); onRequestImport(); }}
+              style={{ background: "transparent", color: "#F1F5F9", border: "none",
+                       padding: "8px 14px", cursor: "pointer", fontSize: 14, whiteSpace: "nowrap",
+                       display: "block", width: "100%", textAlign: "left" }}
+            >⤓ Upload GPX file</button>
+          )}
+          {onRequestStrava && (
+            <button onClick={() => { setMenu(null); onRequestStrava(); }}
+              style={{ background: "transparent", color: "#F1F5F9", border: "none", padding: "8px 14px", cursor: "pointer", fontSize: 14, whiteSpace: "nowrap", display: "block", width: "100%", textAlign: "left" }}
+            >↪ Load from Strava</button>
+          )}
         </div>
       )}
     </div>
