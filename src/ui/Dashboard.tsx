@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Surface } from "react-native-paper";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import type { LiveMetrics } from "../core/metrics";
 import { formatDuration, formatDistance, formatPace } from "../core/format";
 import { ZONE_THEME } from "./theme";
@@ -46,16 +46,19 @@ export function Dashboard({
 
   return (
     <View style={styles.wrap}>
-      <Surface style={styles.hrCard} elevation={3}>
+      <Surface style={[styles.hrCard, { borderTopWidth: 3, borderTopColor: zoneColor }]} elevation={3}>
         {/* 3-column row */}
         <View style={styles.columnsRow}>
           {/* LEFT column */}
           <View style={styles.leftCol}>
-            <Stat label="Elapsed" value={formatDuration(metrics.elapsedSec)} align="flex-start" />
-            <Stat label="Distance" value={formatDistance(metrics.distanceMeters)} align="flex-start" />
-            <Stat label="Pace" value={formatPace(metrics.paceMinPerKm)} align="flex-start" />
-            <Stat label="Start" value={formatClock(startTime)} align="flex-start" />
+            <Stat icon="timer-outline" label="Elapsed" value={formatDuration(metrics.elapsedSec)} align="flex-start" />
+            <Stat icon="map-marker-distance" label="Distance" value={formatDistance(metrics.distanceMeters)} align="flex-start" />
+            <Stat icon="speedometer" label="Pace" value={formatPace(metrics.paceMinPerKm)} align="flex-start" />
+            <Stat icon="clock-start" label="Start" value={formatClock(startTime)} align="flex-start" />
           </View>
+
+          {/* Divider left */}
+          <View style={styles.colDivider} />
 
           {/* CENTER hero */}
           <View style={styles.centerCol}>
@@ -85,23 +88,33 @@ export function Dashboard({
               <Text style={styles.hrNum}>{metrics.hr ?? "--"}</Text>
               <Text style={styles.hrUnit}> bpm</Text>
             </Text>
-            <Text style={styles.condition}>{weather?.condition ?? "—"}</Text>
+            {/* Weather condition with icon */}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <MaterialCommunityIcons name="weather-partly-cloudy" size={13} color="#94A3B8" />
+              <Text style={styles.condition}>{weather?.condition ?? "—"}</Text>
+            </View>
           </View>
+
+          {/* Divider right */}
+          <View style={styles.colDivider} />
 
           {/* RIGHT column */}
           <View style={styles.rightCol}>
-            <Stat label="End" value={formatClock(endTime)} align="flex-end" />
+            <Stat icon="clock-end" label="End" value={formatClock(endTime)} align="flex-end" />
             <Stat
+              icon="thermometer"
               label="Temp"
               value={weather?.temperatureC != null ? `${Math.round(weather.temperatureC)}°C` : "—"}
               align="flex-end"
             />
             <Stat
+              icon="water-percent"
               label="Humidity"
               value={weather?.humidityPct != null ? `${Math.round(weather.humidityPct)}%` : "—"}
               align="flex-end"
             />
             <Stat
+              icon="weather-windy"
               label="Wind"
               value={weather?.windKmh != null ? `${Math.round(weather.windKmh)} km/h` : "—"}
               align="flex-end"
@@ -141,10 +154,18 @@ export function Dashboard({
   );
 }
 
-function Stat({ label, value, align }: { label: string; value: string; align: "flex-start" | "flex-end" }): React.JSX.Element {
+function Stat({ icon, label, value, align }: {
+  icon: keyof typeof MaterialCommunityIcons.glyphMap;
+  label: string;
+  value: string;
+  align: "flex-start" | "flex-end";
+}): React.JSX.Element {
   return (
-    <View style={{ alignItems: align }}>
-      <Text style={styles.statValue}>{value}</Text>
+    <View style={{ alignItems: align, gap: 2 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+        <MaterialCommunityIcons name={icon} size={12} color="#64748B" />
+        <Text style={styles.statValue}>{value}</Text>
+      </View>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
@@ -167,12 +188,13 @@ const styles = StyleSheet.create({
   leftCol: { flex: 1, alignItems: "flex-start", gap: 10 },
   centerCol: { flexShrink: 0, alignItems: "center", paddingHorizontal: 10, gap: 8 },
   rightCol: { flex: 1, alignItems: "flex-end", gap: 10 },
+  colDivider: { width: 1, alignSelf: "stretch", backgroundColor: "#243044", marginHorizontal: 6 },
   hrLine: { textAlign: "center" },
   hrNum: { fontSize: 46, fontWeight: "800", color: "#F1F5F9" },
   hrUnit: { fontSize: 16, fontWeight: "600", color: "#94A3B8" },
   condition: { fontSize: 12, color: "#94A3B8" },
   statValue: { fontSize: 15, fontWeight: "600", color: "#F1F5F9" },
-  statLabel: { fontSize: 10, color: "#94A3B8", marginTop: 2 },
+  statLabel: { fontSize: 10, color: "#64748B", letterSpacing: 0.3, marginTop: 2, textTransform: "uppercase" },
   controls: { flexDirection: "row", justifyContent: "center", gap: 12 },
   iconBtn: {
     minWidth: 56,
