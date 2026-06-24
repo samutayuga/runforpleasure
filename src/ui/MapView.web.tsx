@@ -1,6 +1,7 @@
 import "leaflet/dist/leaflet.css";
 import React, { useMemo, useState } from "react";
-import { MapContainer, TileLayer, Polyline, CircleMarker } from "react-leaflet";
+import L from "leaflet";
+import { MapContainer, TileLayer, Polyline, Marker } from "react-leaflet";
 import type { LatLngExpression, LatLngBoundsExpression } from "leaflet";
 import type { TrackPoint } from "../core/types";
 
@@ -11,8 +12,19 @@ export interface MapViewProps {
   onRequestImport?: () => void;
 }
 
-export default function MapView({ points, progressIndex, markerColor, onRequestImport }: MapViewProps): React.JSX.Element {
+export default function MapView({ points, progressIndex, markerColor: _markerColor, onRequestImport }: MapViewProps): React.JSX.Element {
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+
+  const runnerIcon = useMemo(
+    () =>
+      L.divIcon({
+        html: '<div style="font-size:22px;line-height:24px;text-align:center">🏃</div>',
+        className: "runner-marker",
+        iconSize: [24, 24],
+        iconAnchor: [12, 22],
+      }),
+    [],
+  );
 
   const latlngs = useMemo<LatLngExpression[]>(() => points.map((p) => [p.lat, p.lon]), [points]);
   const bounds = useMemo<LatLngBoundsExpression>(() => {
@@ -52,8 +64,8 @@ export default function MapView({ points, progressIndex, markerColor, onRequestI
         <Polyline positions={latlngs} pathOptions={{ color: "#1D4ED8", weight: 4 }} />
         {/* passed portion: strong orange on top */}
         <Polyline positions={passed} pathOptions={{ color: "#EA580C", weight: 6 }} />
-        {/* position marker: white ring + zone-colored fill, larger */}
-        <CircleMarker center={markerPos} radius={8} pathOptions={{ color: "#FFFFFF", weight: 3, fillColor: markerColor, fillOpacity: 1 }} />
+        {/* position marker: running-person emoji gliding along the route */}
+        <Marker position={markerPos} icon={runnerIcon} />
       </MapContainer>
       {/* hint label */}
       <div style={{ position: "absolute", top: 8, left: 8, zIndex: 999, pointerEvents: "none",

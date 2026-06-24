@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { View, ActivityIndicator, StyleSheet } from "react-native";
+import { View, ActivityIndicator, ScrollView, StyleSheet } from "react-native";
 import { Text, Surface } from "react-native-paper";
 import { parseGpx } from "../core/gpxParser";
 import { cumulativeDistances } from "../core/geo";
@@ -139,7 +139,10 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
   };
 
   return (
-    <View style={styles.screen}>
+    <ScrollView
+      style={styles.scroll}
+      contentContainerStyle={styles.scrollContent}
+    >
       <Text variant="titleMedium" style={styles.title}>{runTitle}</Text>
       <Surface style={styles.mapPanel} elevation={1}>
         <MapView points={run.points} progressIndex={engine.fractionalIndex} markerColor={markerColor} onRequestImport={handleImport} />
@@ -177,14 +180,15 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
           force((n) => n + 1);
         }}
       />
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, alignItems: "center", justifyContent: "center", gap: 20, padding: 16, backgroundColor: "#0B1220" },
+  scroll: { flex: 1, backgroundColor: "#0B1220" },
+  scrollContent: { alignItems: "center", paddingVertical: 6, paddingHorizontal: 8 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: "#0B1220" },
-  title: { color: "#F1F5F9" },
+  title: { color: "#F1F5F9", marginBottom: 4 },
   statusText: { color: "#F1F5F9" },
   mapPanel: {
     width: "100%",
