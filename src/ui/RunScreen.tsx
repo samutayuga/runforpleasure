@@ -144,10 +144,10 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
       contentContainerStyle={styles.scrollContent}
     >
       <Text variant="titleMedium" style={styles.title}>{runTitle}</Text>
-      <Surface style={styles.mapPanel} elevation={1}>
-        <MapView points={run.points} progressIndex={engine.fractionalIndex} markerColor={markerColor} onRequestImport={handleImport} />
-      </Surface>
-      <View style={styles.elevationWrapper}>
+      <Surface style={styles.mapSection} elevation={1}>
+        <View style={styles.mapBox}>
+          <MapView points={run.points} progressIndex={engine.fractionalIndex} markerColor={markerColor} onRequestImport={handleImport} />
+        </View>
         <ElevationProfile
           points={run.points}
           cumulative={cumulative}
@@ -155,10 +155,8 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
           progressIndex={engine.fractionalIndex}
           width={480}
         />
-      </View>
-      <View style={styles.surfaceWrapper}>
         <SurfaceStrip samples={surfaces} width={480} />
-      </View>
+      </Surface>
       <Dashboard
         metrics={metrics}
         playing={engine.playing}
@@ -190,23 +188,16 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: "#0B1220" },
   title: { color: "#F1F5F9", marginBottom: 4 },
   statusText: { color: "#F1F5F9" },
-  mapPanel: {
+  mapSection: {
     width: "100%",
     maxWidth: 480,
-    height: 360,
-    borderRadius: 16,
+    alignSelf: "center",
     backgroundColor: "#0F1A2E",
+    borderRadius: 16,
     overflow: "hidden",
-    alignSelf: "center",
   },
-  elevationWrapper: {
+  mapBox: {
     width: "100%",
-    maxWidth: 480,
-    alignSelf: "center",
-  },
-  surfaceWrapper: {
-    width: "100%",
-    maxWidth: 480,
-    alignSelf: "center",
+    height: 420,
   },
 });

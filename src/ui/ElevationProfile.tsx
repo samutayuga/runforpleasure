@@ -89,9 +89,10 @@ export function ElevationProfile({
         width: "100%",
         maxWidth: width,
         alignSelf: "center",
-        backgroundColor: "#0F1A2E",
-        borderRadius: 12,
+        backgroundColor: "transparent",
         padding: 8,
+        borderTopWidth: 1,
+        borderTopColor: "#1E293B",
       }}
     >
       <Svg width={width} height={height + 4}>

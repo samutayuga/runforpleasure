@@ -26,7 +26,7 @@ function colorFor(surface: string | null): string {
 export function SurfaceStrip({ samples, width }: SurfaceStripProps): React.JSX.Element {
   if (samples.length === 0) {
     return (
-      <View style={{ backgroundColor: "#0F1A2E", borderRadius: 12, padding: 8 }}>
+      <View style={{ backgroundColor: "transparent", padding: 8, borderTopWidth: 1, borderTopColor: "#1E293B" }}>
         <Text style={{ fontSize: 11, color: "#64748B" }}>Road surface: data unavailable</Text>
       </View>
     );
@@ -45,7 +45,7 @@ export function SurfaceStrip({ samples, width }: SurfaceStripProps): React.JSX.E
   }
 
   return (
-    <View style={{ backgroundColor: "#0F1A2E", borderRadius: 12, padding: 8 }}>
+    <View style={{ backgroundColor: "transparent", padding: 8, borderTopWidth: 1, borderTopColor: "#1E293B" }}>
       <Text style={{ fontSize: 11, color: "#94A3B8", marginBottom: 4 }}>Road surface</Text>
       <Svg width={width} height={stripH}>
         {samples.map((sample, i) => {
