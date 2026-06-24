@@ -6,6 +6,7 @@ export interface MapViewProps {
   points: TrackPoint[];
   progressIndex: number;
   markerColor: string;
+  onRequestImport?: () => void;
 }
 
 export default function MapView({ points, progressIndex, markerColor }: MapViewProps): React.JSX.Element {

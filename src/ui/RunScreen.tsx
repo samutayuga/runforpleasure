@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
-import { Text, Button, Surface } from "react-native-paper";
+import { Text, Surface } from "react-native-paper";
 import { parseGpx } from "../core/gpxParser";
 import { cumulativeDistances } from "../core/geo";
 import { ReplayEngine } from "../core/replayEngine";
@@ -120,15 +120,8 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
   return (
     <View style={styles.screen}>
       <Text variant="titleMedium" style={styles.title}>{run.name}</Text>
-      <Button
-        mode="contained-tonal"
-        onPress={() => { void handleImport(); }}
-        accessibilityLabel="Import GPX"
-      >
-        Import GPX
-      </Button>
       <Surface style={styles.mapPanel} elevation={1}>
-        <MapView points={run.points} progressIndex={engine.fractionalIndex} markerColor={markerColor} />
+        <MapView points={run.points} progressIndex={engine.fractionalIndex} markerColor={markerColor} onRequestImport={handleImport} />
       </Surface>
       <Dashboard
         metrics={metrics}
@@ -162,8 +155,8 @@ const styles = StyleSheet.create({
   statusText: { color: "#F1F5F9" },
   mapPanel: {
     width: "100%",
-    maxWidth: 360,
-    height: 320,
+    maxWidth: 480,
+    height: 360,
     borderRadius: 16,
     backgroundColor: "#0F1A2E",
     overflow: "hidden",
