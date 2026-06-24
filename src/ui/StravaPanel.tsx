@@ -80,31 +80,34 @@ export function StravaPanel({ visible, onClose, onSelectTrack }: StravaPanelProp
           />
 
           <Pressable onPress={() => setShowHelp((v) => !v)} accessibilityRole="button">
-            <Text style={styles.helpToggle}>{showHelp ? "Hide token help ▲" : "How do I get a token? ▼"}</Text>
+            <Text style={styles.helpToggle}>{showHelp ? "Hide help ▲" : "How do I load a run from Strava? ▼"}</Text>
           </Pressable>
 
           {showHelp && (
             <View style={styles.helpBox}>
-              <Text style={styles.helpStep}>1. It{"'"}s free — no Strava subscription needed.</Text>
-              <Text style={styles.helpStep}>2. Create a free app at Strava API settings (callback domain: localhost).</Text>
+              <Text style={styles.helpHead}>Strava now restricts API access — it often requires an approved (and sometimes paid) developer agreement. So there are two ways:</Text>
+
+              <Text style={styles.helpHead}>① Recommended — free, no token, no API:</Text>
+              <Text style={styles.helpStep}>Export the run from Strava as GPX: open the activity → the "···" menu → "Export GPX" (or bulk-export all activities under Settings → My Account → Download or Delete Your Account). Both are free for any Strava user.</Text>
+              <Text style={styles.helpStep}>Then close this panel, right-click the map, and choose "Upload GPX file". Done — no token needed.</Text>
+
+              <Text style={styles.helpHead}>② If you have API token access:</Text>
+              <Text style={styles.helpStep}>1. Create an app at Strava API settings (callback domain: localhost).</Text>
               <Text
                 style={styles.link}
                 onPress={() => { void Linking.openURL("https://www.strava.com/settings/api"); }}
               >
                 Open Strava API settings
               </Text>
-              <Text style={styles.helpStep}>3. Authorize activity access — open this URL (replace YOUR_ID), approve, then copy the code from the redirected URL:</Text>
+              <Text style={styles.helpStep}>2. Authorize activity access — open this URL (replace YOUR_ID), approve, then copy the code from the redirected URL:</Text>
               <Text style={styles.code} selectable>
                 {"https://www.strava.com/oauth/authorize?client_id=YOUR_ID&response_type=code&redirect_uri=http://localhost&approval_prompt=force&scope=activity:read_all"}
               </Text>
-              <Text style={styles.helpStep}>4. Exchange the code for a token:</Text>
+              <Text style={styles.helpStep}>3. Exchange the code for a token:</Text>
               <Text style={styles.code} selectable>
                 {"curl -X POST https://www.strava.com/oauth/token -d client_id=ID -d client_secret=SECRET -d code=CODE -d grant_type=authorization_code"}
               </Text>
-              <Text style={styles.helpStep}>5. Paste the returned access_token above.</Text>
-              <Text style={styles.helpStep}>
-                No API access? Strava also lets you export any activity as GPX (open the activity → "···" menu → "Export GPX", or bulk-export in account settings), then right-click the map here and choose "Upload GPX file". No token needed.
-              </Text>
+              <Text style={styles.helpStep}>4. Paste the returned access_token above.</Text>
             </View>
           )}
 
@@ -227,6 +230,7 @@ const styles = StyleSheet.create({
   },
   helpToggle: { color: "#FB923C", fontSize: 13, marginTop: 8, marginBottom: 4 },
   helpBox: { backgroundColor: "#0F1A2E", borderRadius: 10, padding: 12, gap: 6, marginBottom: 8 },
+  helpHead: { color: "#F8FAFC", fontSize: 12, fontWeight: "700", lineHeight: 17, marginTop: 4 },
   helpStep: { color: "#CBD5E1", fontSize: 12, lineHeight: 17 },
   link: { color: "#60A5FA", fontSize: 12, textDecorationLine: "underline" },
   code: { color: "#94A3B8", fontSize: 10, fontFamily: "monospace" },
