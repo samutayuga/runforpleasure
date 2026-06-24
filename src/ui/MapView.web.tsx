@@ -155,7 +155,7 @@ export default function MapView({ points, progressIndex, markerColor: _markerCol
     >
       <MapContainer bounds={bounds} style={{ width: "100%", height: "100%" }} scrollWheelZoom>
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
           subdomains="abcd"
           attribution='&copy; OpenStreetMap contributors &copy; CARTO'
           maxZoom={20}
