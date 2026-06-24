@@ -1,8 +1,16 @@
 import "leaflet/dist/leaflet.css";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import L from "leaflet";
-import { MapContainer, TileLayer, Polyline, Marker } from "react-leaflet";
+import { MapContainer, TileLayer, Polyline, Marker, useMap } from "react-leaflet";
 import type { LatLngExpression, LatLngBoundsExpression } from "leaflet";
+
+function FitBounds({ bounds }: { bounds: LatLngBoundsExpression }): null {
+  const map = useMap();
+  useEffect(() => {
+    map.fitBounds(bounds, { padding: [20, 20] });
+  }, [map, bounds]);
+  return null;
+}
 import type { TrackPoint } from "../core/types";
 
 export interface MapViewProps {
@@ -79,6 +87,7 @@ export default function MapView({ points, progressIndex, markerColor: _markerCol
         <Polyline positions={passed} pathOptions={{ color: "#EA580C", weight: 6 }} />
         {/* position marker: running-person emoji gliding along the route */}
         <Marker position={markerPos} icon={runnerIcon} />
+        <FitBounds bounds={bounds} />
       </MapContainer>
       {/* hint label */}
       <div style={{ position: "absolute", top: 8, left: 8, zIndex: 999, pointerEvents: "none",
