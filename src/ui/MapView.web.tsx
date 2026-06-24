@@ -12,19 +12,17 @@ export interface MapViewProps {
   onRequestImport?: () => void;
 }
 
+if (typeof document !== "undefined" && !document.getElementById("runner-bob-style")) {
+  const style = document.createElement("style");
+  style.id = "runner-bob-style";
+  style.textContent =
+    "@keyframes runnerBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}" +
+    ".runner-bob{animation:runnerBob .5s ease-in-out infinite}";
+  document.head.appendChild(style);
+}
+
 export default function MapView({ points, progressIndex, markerColor: _markerColor, onRequestImport }: MapViewProps): React.JSX.Element {
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
-
-  const runnerIcon = useMemo(
-    () =>
-      L.divIcon({
-        html: '<div style="font-size:22px;line-height:24px;text-align:center">🏃</div>',
-        className: "runner-marker",
-        iconSize: [24, 24],
-        iconAnchor: [12, 22],
-      }),
-    [],
-  );
 
   const latlngs = useMemo<LatLngExpression[]>(() => points.map((p) => [p.lat, p.lon]), [points]);
   const bounds = useMemo<LatLngBoundsExpression>(() => {
@@ -41,6 +39,21 @@ export default function MapView({ points, progressIndex, markerColor: _markerCol
   const frac = clamped - i;
   const a = points[i] ?? points[0];
   const b = points[i + 1] ?? a;
+  const facingRight = b.lon - a.lon >= 0;
+
+  const runnerIcon = useMemo(
+    () =>
+      L.divIcon({
+        html:
+          `<div style="transform:scaleX(${facingRight ? 1 : -1})">` +
+          `<div class="runner-bob" style="font-size:22px;line-height:24px;text-align:center">🏃</div>` +
+          `</div>`,
+        className: "runner-marker",
+        iconSize: [24, 24],
+        iconAnchor: [12, 22],
+      }),
+    [facingRight],
+  );
   const markerPos: LatLngExpression = [a.lat + (b.lat - a.lat) * frac, a.lon + (b.lon - a.lon) * frac];
   const passed = useMemo<LatLngExpression[]>(
     () => latlngs.slice(0, i + 1).concat([markerPos]),
