@@ -10,6 +10,8 @@ import { ZONE_THEME } from "./theme";
 import { ZoneBar } from "./ZoneBar";
 import { DriftGauge } from "./DriftGauge";
 import { ZoneTimeline } from "./ZoneTimeline";
+import { runConclusion } from "../core/conclusion";
+import { ConclusionCard } from "./ConclusionCard";
 import type { TrackPoint } from "../core/types";
 import type { Profile } from "../core/karvonen";
 
@@ -40,6 +42,7 @@ export function RunSummary({
   onInfo?: () => void;
   onRestart: () => void;
 }): React.JSX.Element {
+  const conclusion = runConclusion(zones, decoupling);
   return (
     <ScrollView contentContainerStyle={styles.wrap}>
       <Text style={styles.title}>Run analysis</Text>
@@ -85,6 +88,8 @@ export function RunSummary({
           <Text style={styles.insightDetail}>{ins.detail}</Text>
         </View>
       ))}
+
+      <ConclusionCard conclusion={conclusion} />
 
       <Pressable onPress={onRestart} accessibilityRole="button" accessibilityLabel="Run again" style={styles.btn}>
         <Text style={styles.btnText}>Run again</Text>
