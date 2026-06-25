@@ -6,7 +6,7 @@
 
 ## Goal
 
-Add a chart to the post-run summary that shows **when, where, and in which Karvonen zone** the runner was across the run: a stepped zone line over the route distance (x-axis), with the four zones as y-rows and time labels on the distance ticks.
+Add a chart to the post-run summary that shows **when, where, and in which Karvonen zone** the runner was across the run: a stepped zone line over the route distance (x-axis), with the four zones as y-rows and time labels on the distance ticks. Also resolve a zone-indicator duplication on the live dashboard (§6): the live view keeps only the instantaneous "now" zone, and the cumulative zone breakdown moves entirely to the summary.
 
 ## Non-Goals
 
@@ -100,6 +100,18 @@ No other call sites — `RunSummary` is only rendered in `RunScreen`'s finished 
 - **All-null HR** (no zone series): component renders the "No heart-rate data" placeholder (§2).
 - **Short run** (one zone point): draws a single flat step at that level.
 - **Gaps** (intermittent HR): drawn as a longer horizontal hold — honest, no interpolation across the gap.
+
+## §6 — Live dashboard de-duplication
+
+The live dashboard currently shows **two** zone visuals: the `Dashboard` centre column's instantaneous *zone meter* (4-segment bar + effort emoji/word = the zone you are in **right now**) and the `AnalysisStrip`'s `ZoneBar` (cumulative **% of time** across zones so far). They answer different questions but read as redundant.
+
+**Resolution (live = "now", summary = cumulative):**
+- **`AnalysisStrip.tsx`:** remove the `<ZoneBar … />` element and the `import { ZoneBar }` line. The live strip keeps only the `DriftGauge` + info icon inside the existing `onInfo` `Pressable`.
+  - **Keep `zones` in the component's prop TYPE** (so `Dashboard`'s `<AnalysisStrip zones={zones} … />` call at `Dashboard.tsx:138` stays valid — no `Dashboard`/`RunScreen` change), but **drop `zones` from the destructured parameter list** since it is no longer read. (`tsconfig` is `strict: true` only — `noUnusedLocals`/`noUnusedParameters` are not enabled — so an unread prop in the type is fine; verify `tsc --noEmit` is clean.)
+- The `Dashboard` centre zone meter stays as the live "now" indicator — no change to `Dashboard.tsx` or `RunScreen.tsx` for this de-dup.
+- `ZoneBar` remains used by `RunSummary` (cumulative). The cumulative zone breakdown is therefore summary-only.
+
+This is the one place the slice touches the live view; everything else is summary-only.
 
 ## §5 — Testing
 
