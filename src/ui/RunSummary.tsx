@@ -7,6 +7,8 @@ import type { ZoneId } from "../core/karvonen";
 import { formatDuration } from "../core/format";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { ZONE_THEME } from "./theme";
+import { ZoneBar } from "./ZoneBar";
+import { DriftGauge } from "./DriftGauge";
 
 const ORDER: ZoneId[] = ["below", "zone2", "zone3", "above"];
 
@@ -14,12 +16,6 @@ const SEVERITY_COLOR: Record<Insight["severity"], string> = {
   good: "#0E7C7B",
   watch: "#B45309",
   act: "#9D174D",
-};
-
-const RATING_COLOR: Record<NonNullable<Decoupling["rating"]>, string> = {
-  good: "#0E7C7B",
-  moderate: "#B45309",
-  high: "#9D174D",
 };
 
 export function RunSummary({
@@ -35,23 +31,11 @@ export function RunSummary({
   onInfo?: () => void;
   onRestart: () => void;
 }): React.JSX.Element {
-  const driftColor = decoupling.rating ? RATING_COLOR[decoupling.rating] : "#94A3B8";
-  const driftText =
-    decoupling.pct === null
-      ? "Not enough data"
-      : `${decoupling.pct >= 0 ? "+" : ""}${Math.round(decoupling.pct)}%  ·  ${decoupling.rating ?? ""}`;
-
   return (
     <ScrollView contentContainerStyle={styles.wrap}>
       <Text style={styles.title}>Run analysis</Text>
 
-      <View style={styles.bar}>
-        {ORDER.map((z) =>
-          zones.pctByZone[z] > 0 ? (
-            <View key={z} style={{ flex: zones.pctByZone[z], backgroundColor: ZONE_THEME[z].color }} />
-          ) : null,
-        )}
-      </View>
+      <ZoneBar zones={zones} height={18} />
 
       <View style={styles.zoneList}>
         {ORDER.map((z) => (
@@ -73,16 +57,16 @@ export function RunSummary({
       </View>
 
       <Pressable
-        style={[styles.driftCard, { borderColor: driftColor }]}
+        style={styles.driftWrap}
         onPress={onInfo}
         accessibilityRole="button"
         accessibilityLabel="What does decoupling mean?"
       >
-        <View style={styles.driftHead}>
-          <Text style={styles.driftLabel}>Aerobic decoupling</Text>
+        <DriftGauge decoupling={decoupling} size={120} />
+        <View style={styles.driftHint}>
+          <Text style={styles.driftHintText}>Aerobic decoupling</Text>
           <MaterialCommunityIcons name="information-outline" size={15} color="#94A3B8" />
         </View>
-        <Text style={[styles.driftValue, { color: driftColor }]}>{driftText}</Text>
       </Pressable>
 
       {insights.map((ins, i) => (
@@ -102,15 +86,13 @@ export function RunSummary({
 const styles = StyleSheet.create({
   wrap: { width: "100%", maxWidth: 480, alignSelf: "center", gap: 16, padding: 16 },
   title: { fontSize: 22, fontWeight: "700", color: "#F1F5F9" },
-  bar: { flexDirection: "row", height: 16, borderRadius: 8, overflow: "hidden", backgroundColor: "#1E293B" },
   zoneList: { gap: 6 },
   zoneRow: { flexDirection: "row", justifyContent: "space-between" },
   zoneLabel: { fontSize: 14, color: "#F1F5F9" },
   zoneValue: { fontSize: 14, color: "#94A3B8" },
-  driftCard: { borderWidth: 1, borderRadius: 12, padding: 16, gap: 4 },
-  driftLabel: { fontSize: 13, color: "#94A3B8" },
-  driftHead: { flexDirection: "row", alignItems: "center", gap: 6 },
-  driftValue: { fontSize: 24, fontWeight: "800" },
+  driftWrap: { alignItems: "center", gap: 6 },
+  driftHint: { flexDirection: "row", alignItems: "center", gap: 6 },
+  driftHintText: { fontSize: 13, color: "#94A3B8" },
   insight: { borderLeftWidth: 4, paddingLeft: 12, paddingVertical: 6, gap: 2 },
   insightHead: { fontSize: 15, fontWeight: "700", color: "#F1F5F9" },
   insightDetail: { fontSize: 13, color: "#94A3B8" },
