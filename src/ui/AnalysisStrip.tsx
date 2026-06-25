@@ -3,11 +3,9 @@ import { View, Pressable, StyleSheet } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import type { ZoneDistribution } from "../core/zoneDistribution";
 import type { Decoupling } from "../core/decoupling";
-import { ZoneBar } from "./ZoneBar";
 import { DriftGauge } from "./DriftGauge";
 
 export function AnalysisStrip({
-  zones,
   decoupling,
   onInfo,
 }: {
@@ -20,9 +18,8 @@ export function AnalysisStrip({
       style={styles.wrap}
       onPress={onInfo}
       accessibilityRole="button"
-      accessibilityLabel="What do these mean?"
+      accessibilityLabel="Drift — what does this mean?"
     >
-      <ZoneBar zones={zones} height={14} />
       <View style={styles.driftRow}>
         <DriftGauge decoupling={decoupling} size={64} />
         <MaterialCommunityIcons name="information-outline" size={14} color="#94A3B8" />
