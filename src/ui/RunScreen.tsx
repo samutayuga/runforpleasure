@@ -8,6 +8,7 @@ import { ReplayEngine } from "../core/replayEngine";
 import { deriveMetrics } from "../core/metrics";
 import { zoneDistribution } from "../core/zoneDistribution";
 import { decoupling } from "../core/decoupling";
+import { runInsights } from "../core/coaching";
 import { characterizeRun } from "../core/characterize";
 import type { Run, TrackPoint } from "../core/types";
 import type { Profile } from "../core/karvonen";
@@ -25,6 +26,7 @@ import { fetchSurfaceAlongRoute } from "./osmSurface";
 import type { SurfaceSample } from "./osmSurface";
 import { SurfaceStrip } from "./SurfaceStrip";
 import { StravaPanel } from "./StravaPanel";
+import { RunSummary } from "./RunSummary";
 import { reverseGeocode } from "./geocode";
 
 const SPEEDS = [1, 4, 8];
@@ -154,7 +156,25 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
   const metrics = deriveMetrics(run, cumulative, engine.index, profile);
   const zones = zoneDistribution(run.points, profile, engine.index);
   const dc = decoupling(run.points, cumulative, engine.index);
+  const fullZones = zoneDistribution(run.points, profile);
+  const fullDc = decoupling(run.points, cumulative);
+  const insights = runInsights(fullZones, fullDc);
   const markerColor = metrics.zone ? ZONE_THEME[metrics.zone].color : "#6B7280";
+
+  if (engine.finished) {
+    return (
+      <RunSummary
+        zones={fullZones}
+        decoupling={fullDc}
+        insights={insights}
+        onRestart={() => {
+          engine.seekToStart();
+          engine.play();
+          force((n) => n + 1);
+        }}
+      />
+    );
+  }
 
   const applyRun = (name: string, pts: TrackPoint[]) => {
     if (pts.length === 0) { setError(true); return; }
