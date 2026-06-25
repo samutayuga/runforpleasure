@@ -7,6 +7,9 @@ import { formatDuration, formatDistance, formatPace } from "../core/format";
 import { ZONE_THEME } from "./theme";
 import type { ZoneId } from "../core/karvonen";
 import type { Weather } from "./weather";
+import { AnalysisStrip } from "./AnalysisStrip";
+import type { ZoneDistribution } from "../core/zoneDistribution";
+import type { Decoupling } from "../core/decoupling";
 
 const EFFORT: Record<ZoneId, { i: number; word: string; emoji: string }> = {
   below: { i: 0, word: "Recovery", emoji: "😌" },
@@ -28,6 +31,8 @@ export function Dashboard({
   weather,
   startPlace,
   endPlace,
+  zones,
+  decoupling,
   onPlayPause,
   onRestart,
   onCycleSpeed,
@@ -40,6 +45,8 @@ export function Dashboard({
   weather: Weather | null;
   startPlace?: string | null;
   endPlace?: string | null;
+  zones: ZoneDistribution;
+  decoupling: Decoupling;
   onPlayPause: () => void;
   onRestart: () => void;
   onCycleSpeed: () => void;
@@ -125,6 +132,8 @@ export function Dashboard({
             />
           </View>
         </View>
+
+        <AnalysisStrip zones={zones} decoupling={decoupling} />
 
         {/* Controls row */}
         <View style={styles.controls}>

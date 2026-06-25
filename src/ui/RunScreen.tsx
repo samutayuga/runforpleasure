@@ -6,6 +6,8 @@ import { parseGpx } from "../core/gpxParser";
 import { cumulativeDistances } from "../core/geo";
 import { ReplayEngine } from "../core/replayEngine";
 import { deriveMetrics } from "../core/metrics";
+import { zoneDistribution } from "../core/zoneDistribution";
+import { decoupling } from "../core/decoupling";
 import { characterizeRun } from "../core/characterize";
 import type { Run, TrackPoint } from "../core/types";
 import type { Profile } from "../core/karvonen";
@@ -150,6 +152,8 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
 
   const engine = engineRef.current;
   const metrics = deriveMetrics(run, cumulative, engine.index, profile);
+  const zones = zoneDistribution(run.points, profile, engine.index);
+  const dc = decoupling(run.points, cumulative, engine.index);
   const markerColor = metrics.zone ? ZONE_THEME[metrics.zone].color : "#6B7280";
 
   const applyRun = (name: string, pts: TrackPoint[]) => {
@@ -220,6 +224,8 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
         weather={weather}
         startPlace={startPlace}
         endPlace={endPlace}
+        zones={zones}
+        decoupling={dc}
         onPlayPause={() => {
           engine.playing ? engine.pause() : engine.play();
           force((n) => n + 1);
