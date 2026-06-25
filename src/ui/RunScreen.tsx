@@ -170,6 +170,9 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
           zones={fullZones}
           decoupling={fullDc}
           insights={insights}
+          points={run.points}
+          cumulative={cumulative}
+          profile={profile}
           onInfo={() => setInfoOpen(true)}
           onRestart={() => {
             engine.seekToStart();

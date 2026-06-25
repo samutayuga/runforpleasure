@@ -9,6 +9,9 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { ZONE_THEME } from "./theme";
 import { ZoneBar } from "./ZoneBar";
 import { DriftGauge } from "./DriftGauge";
+import { ZoneTimeline } from "./ZoneTimeline";
+import type { TrackPoint } from "../core/types";
+import type { Profile } from "../core/karvonen";
 
 const ORDER: ZoneId[] = ["below", "zone2", "zone3", "above"];
 
@@ -22,12 +25,18 @@ export function RunSummary({
   zones,
   decoupling,
   insights,
+  points,
+  cumulative,
+  profile,
   onInfo,
   onRestart,
 }: {
   zones: ZoneDistribution;
   decoupling: Decoupling;
   insights: Insight[];
+  points: TrackPoint[];
+  cumulative: number[];
+  profile: Profile;
   onInfo?: () => void;
   onRestart: () => void;
 }): React.JSX.Element {
@@ -36,6 +45,7 @@ export function RunSummary({
       <Text style={styles.title}>Run analysis</Text>
 
       <ZoneBar zones={zones} height={18} />
+      <ZoneTimeline points={points} cumulative={cumulative} profile={profile} width={440} />
 
       <View style={styles.zoneList}>
         {ORDER.map((z) => (
