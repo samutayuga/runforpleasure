@@ -27,6 +27,7 @@ import type { SurfaceSample } from "./osmSurface";
 import { SurfaceStrip } from "./SurfaceStrip";
 import { StravaPanel } from "./StravaPanel";
 import { RunSummary } from "./RunSummary";
+import { AnalysisInfoModal } from "./AnalysisInfoModal";
 import { reverseGeocode } from "./geocode";
 
 const SPEEDS = [1, 4, 8];
@@ -52,6 +53,7 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
   const [stravaOpen, setStravaOpen] = useState(false);
   const [routes, setRoutes] = useState<LoadedRoute[]>([]);
   const [routesOpen, setRoutesOpen] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
   const [, force] = useState(0);
   const engineRef = useRef<ReplayEngine | null>(null);
   const speedIdx = useRef(0);
@@ -163,16 +165,20 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
 
   if (engine.finished) {
     return (
-      <RunSummary
-        zones={fullZones}
-        decoupling={fullDc}
-        insights={insights}
-        onRestart={() => {
-          engine.seekToStart();
-          engine.play();
-          force((n) => n + 1);
-        }}
-      />
+      <>
+        <RunSummary
+          zones={fullZones}
+          decoupling={fullDc}
+          insights={insights}
+          onInfo={() => setInfoOpen(true)}
+          onRestart={() => {
+            engine.seekToStart();
+            engine.play();
+            force((n) => n + 1);
+          }}
+        />
+        <AnalysisInfoModal visible={infoOpen} onClose={() => setInfoOpen(false)} />
+      </>
     );
   }
 
@@ -246,6 +252,7 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
         endPlace={endPlace}
         zones={zones}
         decoupling={dc}
+        onInfo={() => setInfoOpen(true)}
         onPlayPause={() => {
           engine.playing ? engine.pause() : engine.play();
           force((n) => n + 1);
@@ -271,6 +278,7 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
         onClose={() => setRoutesOpen(false)}
         onSelect={(r) => { applyRun(r.name, r.points); setRoutesOpen(false); }}
       />
+      <AnalysisInfoModal visible={infoOpen} onClose={() => setInfoOpen(false)} />
     </ScrollView>
   );
 }

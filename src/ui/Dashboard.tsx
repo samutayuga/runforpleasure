@@ -33,6 +33,7 @@ export function Dashboard({
   endPlace,
   zones,
   decoupling,
+  onInfo,
   onPlayPause,
   onRestart,
   onCycleSpeed,
@@ -47,6 +48,7 @@ export function Dashboard({
   endPlace?: string | null;
   zones: ZoneDistribution;
   decoupling: Decoupling;
+  onInfo?: () => void;
   onPlayPause: () => void;
   onRestart: () => void;
   onCycleSpeed: () => void;
@@ -133,7 +135,7 @@ export function Dashboard({
           </View>
         </View>
 
-        <AnalysisStrip zones={zones} decoupling={decoupling} />
+        <AnalysisStrip zones={zones} decoupling={decoupling} onInfo={onInfo} />
 
         {/* Controls row */}
         <View style={styles.controls}>

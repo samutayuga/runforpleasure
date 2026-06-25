@@ -1,5 +1,6 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, Pressable, StyleSheet } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import type { ZoneDistribution } from "../core/zoneDistribution";
 import type { Decoupling } from "../core/decoupling";
 import type { ZoneId } from "../core/karvonen";
@@ -10,9 +11,11 @@ const ORDER: ZoneId[] = ["below", "zone2", "zone3", "above"];
 export function AnalysisStrip({
   zones,
   decoupling,
+  onInfo,
 }: {
   zones: ZoneDistribution;
   decoupling: Decoupling;
+  onInfo?: () => void;
 }): React.JSX.Element {
   const drift =
     decoupling.pct === null
@@ -20,7 +23,12 @@ export function AnalysisStrip({
       : `${decoupling.pct >= 0 ? "+" : ""}${Math.round(decoupling.pct)}%`;
 
   return (
-    <View style={styles.wrap} accessibilityLabel="Live run analysis">
+    <Pressable
+      style={styles.wrap}
+      onPress={onInfo}
+      accessibilityRole="button"
+      accessibilityLabel="What do these mean?"
+    >
       <View style={styles.bar}>
         {ORDER.map((z) => {
           const pct = zones.pctByZone[z];
@@ -37,8 +45,11 @@ export function AnalysisStrip({
           </Text>
         ))}
       </View>
-      <Text style={styles.drift}>Drift {drift}</Text>
-    </View>
+      <View style={styles.driftRow}>
+        <Text style={styles.drift}>Drift {drift}</Text>
+        <MaterialCommunityIcons name="information-outline" size={14} color="#94A3B8" />
+      </View>
+    </Pressable>
   );
 }
 
@@ -48,4 +59,5 @@ const styles = StyleSheet.create({
   legend: { flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "center" },
   legendItem: { fontSize: 11, color: "#94A3B8" },
   drift: { fontSize: 13, color: "#94A3B8", textAlign: "center", fontWeight: "600" },
+  driftRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
 });

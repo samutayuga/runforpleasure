@@ -5,6 +5,7 @@ import type { Decoupling } from "../core/decoupling";
 import type { Insight } from "../core/coaching";
 import type { ZoneId } from "../core/karvonen";
 import { formatDuration } from "../core/format";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { ZONE_THEME } from "./theme";
 
 const ORDER: ZoneId[] = ["below", "zone2", "zone3", "above"];
@@ -25,11 +26,13 @@ export function RunSummary({
   zones,
   decoupling,
   insights,
+  onInfo,
   onRestart,
 }: {
   zones: ZoneDistribution;
   decoupling: Decoupling;
   insights: Insight[];
+  onInfo?: () => void;
   onRestart: () => void;
 }): React.JSX.Element {
   const driftColor = decoupling.rating ? RATING_COLOR[decoupling.rating] : "#94A3B8";
@@ -69,10 +72,18 @@ export function RunSummary({
         ) : null}
       </View>
 
-      <View style={[styles.driftCard, { borderColor: driftColor }]}>
-        <Text style={styles.driftLabel}>Aerobic decoupling</Text>
+      <Pressable
+        style={[styles.driftCard, { borderColor: driftColor }]}
+        onPress={onInfo}
+        accessibilityRole="button"
+        accessibilityLabel="What does decoupling mean?"
+      >
+        <View style={styles.driftHead}>
+          <Text style={styles.driftLabel}>Aerobic decoupling</Text>
+          <MaterialCommunityIcons name="information-outline" size={15} color="#94A3B8" />
+        </View>
         <Text style={[styles.driftValue, { color: driftColor }]}>{driftText}</Text>
-      </View>
+      </Pressable>
 
       {insights.map((ins, i) => (
         <View key={i} style={[styles.insight, { borderLeftColor: SEVERITY_COLOR[ins.severity] }]}>
@@ -98,6 +109,7 @@ const styles = StyleSheet.create({
   zoneValue: { fontSize: 14, color: "#94A3B8" },
   driftCard: { borderWidth: 1, borderRadius: 12, padding: 16, gap: 4 },
   driftLabel: { fontSize: 13, color: "#94A3B8" },
+  driftHead: { flexDirection: "row", alignItems: "center", gap: 6 },
   driftValue: { fontSize: 24, fontWeight: "800" },
   insight: { borderLeftWidth: 4, paddingLeft: 12, paddingVertical: 6, gap: 2 },
   insightHead: { fontSize: 15, fontWeight: "700", color: "#F1F5F9" },
