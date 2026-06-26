@@ -6,7 +6,8 @@ import type { Insight } from "../core/coaching";
 import type { ZoneId } from "../core/karvonen";
 import { formatDuration } from "../core/format";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { ZONE_THEME } from "./theme";
+import { ZONE_THEME, READINESS_THEME } from "./theme";
+import { readinessFactor, readinessLevel } from "../core/readiness";
 import { ZoneBar } from "./ZoneBar";
 import { DriftGauge } from "./DriftGauge";
 import { ZoneTimeline } from "./ZoneTimeline";
@@ -46,9 +47,16 @@ export function RunSummary({
 }): React.JSX.Element {
   const conclusion = runConclusion(zones, decoupling);
   const fuel = fuelSplit(points, profile);
+  const readiness = readinessFactor(profile.sleepHours);
   return (
     <ScrollView contentContainerStyle={styles.wrap}>
       <Text style={styles.title}>Run analysis</Text>
+
+      {readiness < 1 ? (
+        <Text style={[styles.sleepNote, { color: READINESS_THEME[readinessLevel(readiness)].color }]}>
+          {READINESS_THEME[readinessLevel(readiness)].icon} Low sleep ({profile.sleepHours}h) — zones eased today
+        </Text>
+      ) : null}
 
       <ZoneBar zones={zones} height={18} />
       <ZoneTimeline points={points} cumulative={cumulative} profile={profile} width={440} />
@@ -109,6 +117,7 @@ export function RunSummary({
 const styles = StyleSheet.create({
   wrap: { width: "100%", maxWidth: 480, alignSelf: "center", gap: 16, padding: 16 },
   title: { fontSize: 22, fontWeight: "700", color: "#F1F5F9" },
+  sleepNote: { fontSize: 13, fontWeight: "600", textAlign: "center" },
   zoneList: { gap: 6 },
   zoneRow: { flexDirection: "row", justifyContent: "space-between" },
   zoneLabel: { fontSize: 14, color: "#F1F5F9" },
