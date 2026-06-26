@@ -1,7 +1,7 @@
 import React from "react";
 import { Modal, View, ScrollView, Pressable, StyleSheet } from "react-native";
 import { Text } from "react-native-paper";
-import { DRIFT_INTRO, ZONE_INFO, DRIFT_BANDS } from "../core/glossary";
+import { DRIFT_INTRO, ZONE_INFO, DRIFT_BANDS, FUEL_INTRO } from "../core/glossary";
 import type { DecouplingRating } from "../core/decoupling";
 import { ZONE_THEME } from "./theme";
 
@@ -51,6 +51,9 @@ export function AnalysisInfoModal({
                 <Text style={styles.zoneMeaning}>{z.meaning}</Text>
               </View>
             ))}
+
+            <Text style={styles.heading}>Fuel mix — fat vs carbs</Text>
+            <Text style={styles.intro}>{FUEL_INTRO}</Text>
 
             <Pressable
               onPress={onClose}

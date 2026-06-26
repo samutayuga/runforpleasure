@@ -1,6 +1,9 @@
+import { readinessFactor } from "./readiness";
+
 export interface Profile {
   age: number;
   restingHr: number;
+  sleepHours?: number;
 }
 
 export type ZoneId = "below" | "zone2" | "zone3" | "above";
@@ -13,8 +16,14 @@ export function hrr(profile: Profile): number {
   return maxHr(profile.age) - profile.restingHr;
 }
 
+// HRR inflated by poor sleep readiness: a tired runner's elevated HR is read as
+// a smaller fraction of reserve, so the same HR lands in a lower (easier) zone.
+export function effectiveHrr(profile: Profile): number {
+  return hrr(profile) / readinessFactor(profile.sleepHours);
+}
+
 export function zoneBoundaryHr(profile: Profile, pct: number): number {
-  return pct * hrr(profile) + profile.restingHr;
+  return pct * effectiveHrr(profile) + profile.restingHr;
 }
 
 export function zoneForHr(hr: number | null, profile: Profile): ZoneId | null {

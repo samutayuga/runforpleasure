@@ -97,20 +97,23 @@ export default function MapView({ points, progressIndex, markerColor: _markerCol
     const upsideDown = Math.abs(bearingQ) > 90;
     const transform = `rotate(${bearingQ}deg)` + (upsideDown ? " scaleY(-1)" : "");
     const svg =
-      `<svg width="20" height="20" viewBox="0 0 24 24" stroke="#0F172A" stroke-width="2" stroke-linecap="round" fill="none">` +
-        `<circle cx="14" cy="4" r="2.4" fill="#0F172A" stroke="none"/>` +
-        `<line x1="13.5" y1="6.2" x2="10" y2="14"/>` +
+      `<svg width="22" height="22" viewBox="0 0 24 24" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none">` +
+        // head + leaning torso (spine)
+        `<circle cx="15.5" cy="4.2" r="2.7" fill="#0F172A" stroke="none"/>` +
+        `<line x1="15" y1="6.4" x2="10.5" y2="13.5"/>` +
+        // stride frame A: front leg + arm forward, bent at knee/elbow
         `<g class="rn-a">` +
-          `<line x1="10" y1="14" x2="15" y2="19.5"/>` +
-          `<line x1="10" y1="14" x2="6.5" y2="20.5"/>` +
-          `<line x1="12.5" y1="8" x2="16.5" y2="10.5"/>` +
-          `<line x1="12.5" y1="8" x2="9" y2="6.5"/>` +
+          `<polyline points="10.5,13.5 13.6,16 12.6,20.6"/>` +
+          `<polyline points="10.5,13.5 7.6,16.8 8.9,20.8"/>` +
+          `<polyline points="13,8 16.4,9.6 16,12.6"/>` +
+          `<polyline points="13,8 10,9.2 9.6,12"/>` +
         `</g>` +
+        // stride frame B: limbs swapped
         `<g class="rn-b">` +
-          `<line x1="10" y1="14" x2="8" y2="21"/>` +
-          `<line x1="10" y1="14" x2="13" y2="20.5"/>` +
-          `<line x1="12.5" y1="8" x2="9" y2="10.5"/>` +
-          `<line x1="12.5" y1="8" x2="16" y2="6.5"/>` +
+          `<polyline points="10.5,13.5 8,16.6 7,20.8"/>` +
+          `<polyline points="10.5,13.5 13.2,16.6 14.4,20.3"/>` +
+          `<polyline points="13,8 10,9.6 9.6,12.6"/>` +
+          `<polyline points="13,8 16,9.2 16.5,12"/>` +
         `</g>` +
       `</svg>`;
     return L.divIcon({

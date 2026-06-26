@@ -11,7 +11,7 @@ import { paperTheme } from "./src/ui/paperTheme";
 import type { Profile } from "./src/core/karvonen";
 
 export default function App(): React.JSX.Element {
-  const [profile, setProfile] = useState<Profile>({ age: 35, restingHr: 60 });
+  const [profile, setProfile] = useState<Profile>({ age: 35, restingHr: 60, sleepHours: 8 });
   const [editing, setEditing] = useState(true);
 
   return (

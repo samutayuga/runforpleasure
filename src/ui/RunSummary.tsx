@@ -6,12 +6,15 @@ import type { Insight } from "../core/coaching";
 import type { ZoneId } from "../core/karvonen";
 import { formatDuration } from "../core/format";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { ZONE_THEME } from "./theme";
+import { ZONE_THEME, READINESS_THEME } from "./theme";
+import { readinessFactor, readinessLevel } from "../core/readiness";
 import { ZoneBar } from "./ZoneBar";
 import { DriftGauge } from "./DriftGauge";
 import { ZoneTimeline } from "./ZoneTimeline";
 import { runConclusion } from "../core/conclusion";
 import { ConclusionCard } from "./ConclusionCard";
+import { fuelSplit } from "../core/fuel";
+import { FuelSplit } from "./FuelSplit";
 import type { TrackPoint } from "../core/types";
 import type { Profile } from "../core/karvonen";
 
@@ -43,9 +46,17 @@ export function RunSummary({
   onRestart: () => void;
 }): React.JSX.Element {
   const conclusion = runConclusion(zones, decoupling);
+  const fuel = fuelSplit(points, profile);
+  const readiness = readinessFactor(profile.sleepHours);
   return (
     <ScrollView contentContainerStyle={styles.wrap}>
       <Text style={styles.title}>Run analysis</Text>
+
+      {readiness < 1 ? (
+        <Text style={[styles.sleepNote, { color: READINESS_THEME[readinessLevel(readiness)].color }]}>
+          {READINESS_THEME[readinessLevel(readiness)].icon} Low sleep ({profile.sleepHours}h) — zones eased today
+        </Text>
+      ) : null}
 
       <ZoneBar zones={zones} height={18} />
       <ZoneTimeline points={points} cumulative={cumulative} profile={profile} width={440} />
@@ -82,6 +93,11 @@ export function RunSummary({
         </View>
       </Pressable>
 
+      <View style={styles.fuelWrap}>
+        <Text style={styles.fuelTitle}>Fuel mix · fat vs carbs</Text>
+        <FuelSplit fuel={fuel} />
+      </View>
+
       {insights.map((ins, i) => (
         <View key={i} style={[styles.insight, { borderLeftColor: SEVERITY_COLOR[ins.severity] }]}>
           <Text style={styles.insightHead}>{ins.headline}</Text>
@@ -101,6 +117,7 @@ export function RunSummary({
 const styles = StyleSheet.create({
   wrap: { width: "100%", maxWidth: 480, alignSelf: "center", gap: 16, padding: 16 },
   title: { fontSize: 22, fontWeight: "700", color: "#F1F5F9" },
+  sleepNote: { fontSize: 13, fontWeight: "600", textAlign: "center" },
   zoneList: { gap: 6 },
   zoneRow: { flexDirection: "row", justifyContent: "space-between" },
   zoneLabel: { fontSize: 14, color: "#F1F5F9" },
@@ -108,6 +125,8 @@ const styles = StyleSheet.create({
   driftWrap: { alignItems: "center", gap: 6 },
   driftHint: { flexDirection: "row", alignItems: "center", gap: 6 },
   driftHintText: { fontSize: 13, color: "#94A3B8" },
+  fuelWrap: { gap: 8 },
+  fuelTitle: { fontSize: 14, fontWeight: "600", color: "#F1F5F9" },
   insight: { borderLeftWidth: 4, paddingLeft: 12, paddingVertical: 6, gap: 2 },
   insightHead: { fontSize: 15, fontWeight: "700", color: "#F1F5F9" },
   insightDetail: { fontSize: 13, color: "#94A3B8" },
