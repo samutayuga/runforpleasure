@@ -83,3 +83,11 @@ describe("fuelSplit", () => {
     expect(r.fatPctByZone.above).toBe(0);
   });
 });
+
+describe("intensityFromHr under low sleep", () => {
+  it("reads a lower intensity for the same HR when tired", () => {
+    const rested = intensityFromHr(150, profile)!;
+    const tired = intensityFromHr(150, { ...profile, sleepHours: 4 })!;
+    expect(tired).toBeLessThan(rested);
+  });
+});

@@ -1,5 +1,5 @@
 import type { TrackPoint } from "./types";
-import { hrr, zoneForHr, type Profile, type ZoneId } from "./karvonen";
+import { effectiveHrr, zoneForHr, type Profile, type ZoneId } from "./karvonen";
 
 // Crossover anchors: [intensity (fraction of HRR), fat fraction of energy].
 // Grounded in the crossover concept (Brooks & Mercier 1994): fat dominates at
@@ -37,7 +37,7 @@ export function fatFraction(intensity: number): number {
 // Null when HR is missing or HRR is non-positive.
 export function intensityFromHr(hr: number | null, profile: Profile): number | null {
   if (hr === null) return null;
-  const reserve = hrr(profile);
+  const reserve = effectiveHrr(profile);
   if (reserve <= 0) return null;
   return clamp01((hr - profile.restingHr) / reserve);
 }
