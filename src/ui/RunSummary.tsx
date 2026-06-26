@@ -12,6 +12,8 @@ import { DriftGauge } from "./DriftGauge";
 import { ZoneTimeline } from "./ZoneTimeline";
 import { runConclusion } from "../core/conclusion";
 import { ConclusionCard } from "./ConclusionCard";
+import { fuelSplit } from "../core/fuel";
+import { FuelSplit } from "./FuelSplit";
 import type { TrackPoint } from "../core/types";
 import type { Profile } from "../core/karvonen";
 
@@ -43,6 +45,7 @@ export function RunSummary({
   onRestart: () => void;
 }): React.JSX.Element {
   const conclusion = runConclusion(zones, decoupling);
+  const fuel = fuelSplit(points, profile);
   return (
     <ScrollView contentContainerStyle={styles.wrap}>
       <Text style={styles.title}>Run analysis</Text>
@@ -82,6 +85,11 @@ export function RunSummary({
         </View>
       </Pressable>
 
+      <View style={styles.fuelWrap}>
+        <Text style={styles.fuelTitle}>Fuel mix · fat vs carbs</Text>
+        <FuelSplit fuel={fuel} />
+      </View>
+
       {insights.map((ins, i) => (
         <View key={i} style={[styles.insight, { borderLeftColor: SEVERITY_COLOR[ins.severity] }]}>
           <Text style={styles.insightHead}>{ins.headline}</Text>
@@ -108,6 +116,8 @@ const styles = StyleSheet.create({
   driftWrap: { alignItems: "center", gap: 6 },
   driftHint: { flexDirection: "row", alignItems: "center", gap: 6 },
   driftHintText: { fontSize: 13, color: "#94A3B8" },
+  fuelWrap: { gap: 8 },
+  fuelTitle: { fontSize: 14, fontWeight: "600", color: "#F1F5F9" },
   insight: { borderLeftWidth: 4, paddingLeft: 12, paddingVertical: 6, gap: 2 },
   insightHead: { fontSize: 15, fontWeight: "700", color: "#F1F5F9" },
   insightDetail: { fontSize: 13, color: "#94A3B8" },

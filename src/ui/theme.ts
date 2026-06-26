@@ -6,3 +6,11 @@ export const ZONE_THEME: Record<ZoneId, { label: string; color: string; icon: st
   zone3: { label: "Zone 3 · Tempo", color: "#B45309", icon: "🟠" },
   above: { label: "Above Z3", color: "#9D174D", icon: "🔴" },
 };
+
+export const FUEL_THEME: {
+  fat: { label: string; color: string; icon: string };
+  carb: { label: string; color: string; icon: string };
+} = {
+  fat: { label: "Fat", color: "#15803D", icon: "🥑" },
+  carb: { label: "Carbs", color: "#1D4ED8", icon: "🍞" },
+};
