@@ -69,3 +69,9 @@ export const DRIFT_BANDS: DriftBand[] = [
     meaning: "Heart rate climbed to hold pace. Went too hard, under-trained, hot, or under-fuelled.",
   },
 ];
+
+export const FUEL_INTRO =
+  "Fuel mix estimates how much of your energy came from fat versus carbohydrate, " +
+  "based on how hard you ran. Easy running burns mostly fat; as intensity climbs, " +
+  "your body shifts to carbohydrate (glycogen). The crossover to mostly-carbs sits " +
+  "around the top of Zone 2. A higher fat share means a more aerobic, base-building run.";

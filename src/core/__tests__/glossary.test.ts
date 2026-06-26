@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ZONE_INFO, DRIFT_BANDS, DRIFT_INTRO } from "../glossary";
+import { ZONE_INFO, DRIFT_BANDS, DRIFT_INTRO, FUEL_INTRO } from "../glossary";
 import type { ZoneId } from "../karvonen";
 import type { DecouplingRating } from "../decoupling";
 
@@ -38,5 +38,13 @@ describe("glossary content", () => {
 
   it("has a non-empty drift intro", () => {
     expect(DRIFT_INTRO.length).toBeGreaterThan(0);
+  });
+});
+
+describe("FUEL_INTRO", () => {
+  it("explains the fat-vs-carb crossover", () => {
+    expect(FUEL_INTRO.toLowerCase()).toContain("fat");
+    expect(FUEL_INTRO.toLowerCase()).toContain("carbohydrate");
+    expect(FUEL_INTRO.toLowerCase()).toContain("crossover");
   });
 });
