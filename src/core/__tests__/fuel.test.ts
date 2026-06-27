@@ -10,7 +10,7 @@ import {
   fatLossPlan,
   dynamicFatLossPlan,
 } from "../fuel";
-import type { Profile } from "../karvonen";
+import { maxHr, type Profile } from "../karvonen";
 import type { TrackPoint } from "../types";
 
 const profile: Profile = { age: 30, restingHr: 60 };
@@ -34,6 +34,11 @@ describe("fatFraction", () => {
   it("interpolates linearly between anchors", () => {
     // midpoint of [0.6,0.8]: fat = (0.6 + 0.25) / 2 = 0.425
     expect(fatFraction(0.7)).toBeCloseTo(0.425, 5);
+  });
+  it("women oxidise more fat at the same intensity (+0.05, clamped ≤1)", () => {
+    expect(fatFraction(0.7, "female")).toBeCloseTo(0.475, 5); // 0.425 + 0.05
+    expect(fatFraction(0.7, "male")).toBeCloseTo(0.425, 5);
+    expect(fatFraction(0, "female")).toBeCloseTo(0.9, 5); // 0.85 + 0.05
   });
   it("decreases monotonically as intensity rises", () => {
     expect(fatFraction(0.3)).toBeGreaterThan(fatFraction(0.7));
@@ -191,6 +196,16 @@ describe("fuelEnergy sleep coupling (physiology-correct)", () => {
     const heavier = fuelEnergy(pts, [0, 1000], { ...heavy, weightKg: 90 })!;
     const lighter = fuelEnergy(pts, [0, 1000], { ...heavy, weightKg: 60 })!;
     expect(heavier.fatGrams).toBeGreaterThan(lighter.fatGrams);
+  });
+  it("applies the female substrate uplift at equal relative intensity", () => {
+    // Same %HRR for both: feed each their own 65%-HRR heart rate so the maxHr
+    // difference is normalised out and only the +0.05 fat uplift remains.
+    const hrAt = (p: Profile) => Math.round(p.restingHr + 0.65 * (maxHr(p.age, p.sex) - p.restingHr));
+    const fProf: Profile = { ...heavy, sex: "female" };
+    const mProf: Profile = { ...heavy, sex: "male" };
+    const female = fuelEnergy([tp(0, hrAt(fProf)), tp(60, hrAt(fProf))], [0, 1000], fProf)!;
+    const male = fuelEnergy([tp(0, hrAt(mProf)), tp(60, hrAt(mProf))], [0, 1000], mProf)!;
+    expect(female.fatGrams).toBeGreaterThan(male.fatGrams);
   });
 });
 

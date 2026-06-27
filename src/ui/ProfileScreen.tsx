@@ -106,6 +106,29 @@ export function ProfileScreen({
         />
       </View>
 
+      <View style={styles.sexCard}>
+        <Text style={styles.cardLabel}>🚻 Sex (tunes max HR & fat burn)</Text>
+        <View style={styles.sexRow}>
+          {([
+            ["male", "♂ Male"],
+            ["female", "♀ Female"],
+          ] as const).map(([value, label]) => {
+            const active = profile.sex === value;
+            return (
+              <Pressable
+                key={value}
+                onPress={() => onChange({ ...profile, sex: value })}
+                accessibilityRole="button"
+                accessibilityLabel={label}
+                style={[styles.sexBtn, active && styles.sexBtnActive]}
+              >
+                <Text style={[styles.sexBtnText, active && styles.sexBtnTextActive]}>{label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+
       <View style={styles.sleepCard}>
         <Text style={styles.cardLabel}>😴 Sleep last night</Text>
         <View style={styles.stepRow}>
@@ -137,7 +160,7 @@ export function ProfileScreen({
       </View>
 
       <Text style={styles.summary}>
-        {theme.icon} {theme.label} · MaxHR {Math.round(maxHr(profile.age))} · HRR {Math.round(hrr(profile))}
+        {theme.icon} {theme.label} · MaxHR {Math.round(maxHr(profile.age, profile.sex))} · HRR {Math.round(hrr(profile))}
       </Text>
       <Text style={styles.summary}>🔥 Fatmax target ≈ {Math.round(fatmaxHr(profile))} bpm (keep here to burn fat fastest)</Text>
 
@@ -168,6 +191,12 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", gap: 12 },
   card: { flex: 1, backgroundColor: "#16213A", borderRadius: 16, padding: 16, gap: 8, alignItems: "center" },
   sleepCard: { backgroundColor: "#16213A", borderRadius: 16, padding: 16, gap: 10 },
+  sexCard: { backgroundColor: "#16213A", borderRadius: 16, padding: 16, gap: 10 },
+  sexRow: { flexDirection: "row", gap: 12 },
+  sexBtn: { flex: 1, minHeight: 44, borderRadius: 12, backgroundColor: "#0B1220", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#334155" },
+  sexBtnActive: { backgroundColor: "#0E7C7B", borderColor: "#0E7C7B" },
+  sexBtnText: { color: "#94A3B8", fontSize: 15, fontWeight: "600" },
+  sexBtnTextActive: { color: "#fff" },
   cardLabel: { color: "#94A3B8", fontSize: 14, fontWeight: "600" },
   stepRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 16 },
   stepBtn: { minWidth: 44, minHeight: 44, borderRadius: 12, backgroundColor: "#0B1220", alignItems: "center", justifyContent: "center" },

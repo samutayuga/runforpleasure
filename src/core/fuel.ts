@@ -1,5 +1,5 @@
 import type { TrackPoint } from "./types";
-import { effectiveHrr, hrr, zoneForHr, type Profile, type ZoneId } from "./karvonen";
+import { effectiveHrr, hrr, zoneForHr, type Profile, type Sex, type ZoneId } from "./karvonen";
 
 // Gross running energy cost: ~1.036 kcal burned per kg of body mass per km,
 // roughly pace-independent for running (di Prampero). Lets us turn distance +
@@ -33,19 +33,25 @@ function clamp01(x: number): number {
   return x;
 }
 
+// Women oxidise more fat than men at the same relative intensity (higher
+// estrogen spares glycogen). Lift the fat share a few points for female.
+const FEMALE_FAT_UPLIFT = 0.05;
+
 // Fraction (0..1) of energy from fat at a given intensity (fraction of HRR).
-// Piecewise-linear between ANCHORS; flat outside the [0,1] range.
-export function fatFraction(intensity: number): number {
+// Piecewise-linear between ANCHORS; flat outside the [0,1] range. Female gets a
+// small substrate uplift, clamped to 1.
+export function fatFraction(intensity: number, sex?: Sex): number {
   const x = clamp01(intensity);
+  const uplift = sex === "female" ? FEMALE_FAT_UPLIFT : 0;
   for (let i = 1; i < ANCHORS.length; i++) {
     const [x0, y0] = ANCHORS[i - 1];
     const [x1, y1] = ANCHORS[i];
     if (x <= x1) {
       const t = x1 === x0 ? 0 : (x - x0) / (x1 - x0);
-      return y0 + t * (y1 - y0);
+      return clamp01(y0 + t * (y1 - y0) + uplift);
     }
   }
-  return ANCHORS[ANCHORS.length - 1][1];
+  return clamp01(ANCHORS[ANCHORS.length - 1][1] + uplift);
 }
 
 // Intensity as a fraction of heart-rate reserve, clamped to [0,1].
@@ -101,7 +107,7 @@ export function fuelSplit(
         continue;
       }
       knownSec += dt;
-      const fat = fatFraction(intensity);
+      const fat = fatFraction(intensity, profile.sex);
       const rate = Math.max(intensity, 0.01); // relative energy rate, floored
       fatEnergy += fat * rate * dt;
       totalEnergy += rate * dt;
@@ -186,7 +192,7 @@ export function fuelEnergy(
         continue;
       }
       knownSec += dt;
-      const fat = fatFraction(intensity) * sleepFat;
+      const fat = fatFraction(intensity, profile.sex) * sleepFat;
       const fatKcalHere = fat * kcal;
       fatKcal += fatKcalHere;
       carbKcal += (1 - fat) * kcal;
