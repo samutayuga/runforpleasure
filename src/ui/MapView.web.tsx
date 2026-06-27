@@ -3,7 +3,10 @@ import React, { useEffect, useMemo, useState } from "react";
 import L from "leaflet";
 import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap } from "react-leaflet";
 import type { LatLngExpression, LatLngBoundsExpression } from "leaflet";
-import { reverseGeocode } from "./geocode";
+import { nearestPlace } from "../core/places";
+import { PLACES } from "../data/places";
+import { routeAreaMarkers } from "../core/areaMarkers";
+import type { AreaMarker } from "../core/areaMarkers";
 
 import type { TrackPoint } from "../core/types";
 
@@ -29,12 +32,12 @@ if (typeof document !== "undefined" && !document.getElementById("runner-anim-sty
   const style = document.createElement("style");
   style.id = "runner-anim-style";
   style.textContent =
-    "@keyframes rnStepA{0%,49.9%{opacity:1}50%,100%{opacity:0}}" +
-    "@keyframes rnStepB{0%,49.9%{opacity:0}50%,100%{opacity:1}}" +
-    "@keyframes rnBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}" +
-    ".rn-a{animation:rnStepA .36s steps(1) infinite}" +
-    ".rn-b{animation:rnStepB .36s steps(1) infinite}" +
-    ".rn-bob{animation:rnBob .36s ease-in-out infinite}";
+    "@keyframes rnBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.5px)}}" +
+    ".rn-bob{animation:rnBob .52s ease-in-out infinite}" +
+    // dark, rounded place-name popup
+    ".rn-popup .leaflet-popup-content-wrapper{background:#16213A;color:#F1F5F9;border:1px solid #334155;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.55)}" +
+    ".rn-popup .leaflet-popup-content{margin:9px 14px;font:600 13px/1.25 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;letter-spacing:.2px}" +
+    ".rn-popup .leaflet-popup-tip{background:#16213A;box-shadow:none;border:none}";
   document.head.appendChild(style);
 }
 
@@ -51,18 +54,29 @@ function kmIcon(label: string): L.DivIcon {
 }
 
 function KmMarker({ pos, label }: { pos: [number, number]; label: string }): React.JSX.Element {
-  const [name, setName] = useState<string | null>(null);
+  // Offline nearest-place name, resolved synchronously from the bundled dataset.
+  const name = nearestPlace(pos[0], pos[1], PLACES) ?? "Unknown area";
   return (
-    <Marker
-      position={pos}
-      icon={kmIcon(label)}
-      eventHandlers={{
-        popupopen: async () => {
-          if (name === null) setName((await reverseGeocode(pos[0], pos[1])) ?? "Unknown area");
-        },
-      }}
-    >
-      <Popup>{`${label} km · ${name ?? "Locating…"}`}</Popup>
+    <Marker position={pos} icon={kmIcon(label)}>
+      <Popup className="rn-popup" closeButton={false}>{`📍 ${name}`}</Popup>
+    </Marker>
+  );
+}
+
+// Small cyan dot marking a named area the route passes through, between km marks.
+const areaDotIcon = L.divIcon({
+  html:
+    `<div style="width:9px;height:9px;border-radius:50%;background:#22D3EE;` +
+    `border:2px solid #0B1220;box-shadow:0 1px 2px rgba(0,0,0,0.5)"></div>`,
+  className: "area-dot",
+  iconSize: [13, 13],
+  iconAnchor: [6.5, 6.5],
+});
+
+function AreaMarkerDot({ m }: { m: AreaMarker }): React.JSX.Element {
+  return (
+    <Marker position={[m.lat, m.lon]} icon={areaDotIcon}>
+      <Popup className="rn-popup" closeButton={false}>{`📍 ${m.name}`}</Popup>
     </Marker>
   );
 }
@@ -96,25 +110,28 @@ export default function MapView({ points, progressIndex, markerColor: _markerCol
   const runnerIcon = useMemo(() => {
     const upsideDown = Math.abs(bearingQ) > 90;
     const transform = `rotate(${bearingQ}deg)` + (upsideDown ? " scaleY(-1)" : "");
+    // Running athlete with continuously rotating joints (SMIL): thighs swing at
+    // the hip, shins bend at the knee, arms swing at the shoulder/elbow. Legs and
+    // arms run a triangle-wave cycle; opposite sides are out of phase.
+    const D = "0.52s";
+    const rot = (vals: string) =>
+      `<animateTransform attributeName="transform" type="rotate" dur="${D}" repeatCount="indefinite" values="${vals}"/>`;
+    // hip (10.6,14), knee (10.9,17.5), shoulder (13.8,8), elbow (15.4,10.4)
+    const leg = (thighVals: string, shinVals: string) =>
+      `<g>${rot(thighVals)}<line x1="10.6" y1="14" x2="10.9" y2="17.5" stroke-width="2.4"/>` +
+      `<g>${rot(shinVals)}<line x1="10.9" y1="17.5" x2="11.3" y2="20.9" stroke-width="2.4"/></g></g>`;
+    const arm = (upperVals: string, foreVals: string) =>
+      `<g>${rot(upperVals)}<line x1="13.8" y1="8" x2="15.4" y2="10.4" stroke-width="2"/>` +
+      `<g>${rot(foreVals)}<line x1="15.4" y1="10.4" x2="15" y2="12.8" stroke-width="2"/></g></g>`;
     const svg =
-      `<svg width="22" height="22" viewBox="0 0 24 24" stroke="#0F172A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none">` +
-        // head + leaning torso (spine)
-        `<circle cx="15.5" cy="4.2" r="2.7" fill="#0F172A" stroke="none"/>` +
-        `<line x1="15" y1="6.4" x2="10.5" y2="13.5"/>` +
-        // stride frame A: front leg + arm forward, bent at knee/elbow
-        `<g class="rn-a">` +
-          `<polyline points="10.5,13.5 13.6,16 12.6,20.6"/>` +
-          `<polyline points="10.5,13.5 7.6,16.8 8.9,20.8"/>` +
-          `<polyline points="13,8 16.4,9.6 16,12.6"/>` +
-          `<polyline points="13,8 10,9.2 9.6,12"/>` +
-        `</g>` +
-        // stride frame B: limbs swapped
-        `<g class="rn-b">` +
-          `<polyline points="10.5,13.5 8,16.6 7,20.8"/>` +
-          `<polyline points="10.5,13.5 13.2,16.6 14.4,20.3"/>` +
-          `<polyline points="13,8 10,9.6 9.6,12.6"/>` +
-          `<polyline points="13,8 16,9.2 16.5,12"/>` +
-        `</g>` +
+      `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-linecap="round" stroke-linejoin="round">` +
+        // back limbs first (drawn behind), then torso/head, then front limbs
+        leg("18 10.6 14;-18 10.6 14;18 10.6 14", "42 10.9 17.5;16 10.9 17.5;42 10.9 17.5") +
+        arm("20 13.8 8;-20 13.8 8;20 13.8 8", "22 15.4 10.4;48 15.4 10.4;22 15.4 10.4") +
+        `<line x1="13.6" y1="7" x2="10.6" y2="14" stroke-width="3.2"/>` +
+        `<circle cx="14" cy="4.6" r="2.7" fill="#0F172A" stroke="none"/>` +
+        leg("-18 10.6 14;18 10.6 14;-18 10.6 14", "16 10.9 17.5;42 10.9 17.5;16 10.9 17.5") +
+        arm("-20 13.8 8;20 13.8 8;-20 13.8 8", "48 15.4 10.4;22 15.4 10.4;48 15.4 10.4") +
       `</svg>`;
     return L.divIcon({
       html:
@@ -151,6 +168,11 @@ export default function MapView({ points, progressIndex, markerColor: _markerCol
     return out;
   }, [points, cumulative]);
 
+  const areaMarkers = useMemo(
+    () => routeAreaMarkers(points, cumulative, PLACES),
+    [points, cumulative],
+  );
+
   return (
     <div
       style={{ position: "relative", width: "100%", height: "100%" }}
@@ -170,6 +192,8 @@ export default function MapView({ points, progressIndex, markerColor: _markerCol
         <Polyline positions={latlngs} pathOptions={{ color: "#1D4ED8", weight: 4 }} />
         {/* passed portion: strong orange on top */}
         <Polyline positions={passed} pathOptions={{ color: "#EA580C", weight: 6 }} />
+        {/* area markers: named places the route passes through, between km marks */}
+        {areaMarkers.map((m, idx) => <AreaMarkerDot key={`area-${idx}`} m={m} />)}
         {/* km markers: labeled every 1 km along the route, below the runner */}
         {kmMarkers.map((m) => <KmMarker key={m.label} pos={m.pos} label={m.label} />)}
         {/* position marker: running-person emoji gliding along the route */}
