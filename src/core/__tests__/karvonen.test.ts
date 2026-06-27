@@ -9,6 +9,14 @@ describe("karvonen formulas", () => {
   it("maxHr", () => {
     expect(maxHr(30)).toBeCloseTo(191.8, 5);
   });
+  it("maxHr is male/neutral by default and uses Gulati for women", () => {
+    expect(maxHr(35)).toBeCloseTo(188.6, 5); // 211 - 0.64*35
+    expect(maxHr(35, "male")).toBeCloseTo(188.6, 5);
+    expect(maxHr(35, "female")).toBeCloseTo(175.2, 5); // 206 - 0.88*35
+  });
+  it("hrr follows the sex-specific maxHr", () => {
+    expect(hrr({ age: 35, restingHr: 60, sex: "female" })).toBeCloseTo(115.2, 5);
+  });
   it("hrr", () => {
     expect(hrr(profile)).toBeCloseTo(131.8, 5);
   });

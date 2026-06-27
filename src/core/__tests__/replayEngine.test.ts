@@ -102,3 +102,36 @@ describe("ReplayEngine.fractionalIndex", () => {
     expect(e.fractionalIndex).toBe(0);
   });
 });
+
+describe("ReplayEngine seek + progress", () => {
+  it("progress is 0 at start and 1 at the end", () => {
+    const e = new ReplayEngine(track());
+    expect(e.progress).toBe(0);
+    e.play();
+    e.advance(10_000);
+    expect(e.progress).toBe(1);
+  });
+
+  it("seekToFraction jumps to the matching point in time", () => {
+    const e = new ReplayEngine(track()); // 3s total
+    e.seekToFraction(0.5); // 1.5s -> the 1s point, halfway to 2s
+    expect(e.fractionalIndex).toBeCloseTo(1.5, 5);
+    expect(e.progress).toBeCloseTo(0.5, 5);
+  });
+
+  it("clamps the fraction to [0,1]", () => {
+    const e = new ReplayEngine(track());
+    e.seekToFraction(2);
+    expect(e.progress).toBe(1);
+    expect(e.finished).toBe(true);
+    e.seekToFraction(-1);
+    expect(e.progress).toBe(0);
+  });
+
+  it("can seek without playing (drag to scrub while paused)", () => {
+    const e = new ReplayEngine(track());
+    e.seekToFraction(1 / 3); // -> the 1s point
+    expect(e.playing).toBe(false);
+    expect(e.index).toBe(1);
+  });
+});

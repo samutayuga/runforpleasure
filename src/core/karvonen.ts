@@ -1,19 +1,27 @@
 import { readinessFactor } from "./readiness";
 
+export type Sex = "male" | "female";
+
 export interface Profile {
   age: number;
   restingHr: number;
   sleepHours?: number;
+  weightKg?: number;
+  bodyFatPct?: number;
+  sex?: Sex;
 }
 
 export type ZoneId = "below" | "zone2" | "zone3" | "above";
 
-export function maxHr(age: number): number {
+// Predicted max heart rate. Default (male/unknown) uses Nes (211 − 0.64·age).
+// Women track the Gulati formula (206 − 0.88·age), which runs a few bpm lower.
+export function maxHr(age: number, sex?: Sex): number {
+  if (sex === "female") return 206 - 0.88 * age;
   return 211 - 0.64 * age;
 }
 
 export function hrr(profile: Profile): number {
-  return maxHr(profile.age) - profile.restingHr;
+  return maxHr(profile.age, profile.sex) - profile.restingHr;
 }
 
 // HRR inflated by poor sleep readiness: a tired runner's elevated HR is read as

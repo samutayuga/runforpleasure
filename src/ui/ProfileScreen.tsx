@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
 import type { Profile } from "../core/karvonen";
 import { maxHr, hrr } from "../core/karvonen";
+import { fatmaxHr } from "../core/fuel";
 import { readinessFactor, readinessLevel } from "../core/readiness";
 import { READINESS_THEME } from "./theme";
 
@@ -61,6 +62,8 @@ export function ProfileScreen({
   onDone: () => void;
 }): React.JSX.Element {
   const sleep = profile.sleepHours ?? 8;
+  const weight = profile.weightKg ?? 70;
+  const bodyFat = profile.bodyFatPct ?? 25;
   const factor = readinessFactor(profile.sleepHours);
   const theme = READINESS_THEME[readinessLevel(factor)];
   const barFraction = clamp(0, 1, (factor - 0.9) / 0.1);
@@ -84,6 +87,46 @@ export function ProfileScreen({
           unit="bpm"
           onStep={(d) => onChange({ ...profile, restingHr: clamp(30, 110, profile.restingHr + d) })}
         />
+      </View>
+
+      <View style={styles.row}>
+        <StatStepper
+          icon="⚖️"
+          label="Weight"
+          value={String(weight)}
+          unit="kg"
+          onStep={(d) => onChange({ ...profile, weightKg: clamp(30, 200, weight + d) })}
+        />
+        <StatStepper
+          icon="📊"
+          label="Body fat"
+          value={String(bodyFat)}
+          unit="% (test)"
+          onStep={(d) => onChange({ ...profile, bodyFatPct: clamp(3, 60, bodyFat + d) })}
+        />
+      </View>
+
+      <View style={styles.sexCard}>
+        <Text style={styles.cardLabel}>🚻 Sex (tunes max HR & fat burn)</Text>
+        <View style={styles.sexRow}>
+          {([
+            ["male", "♂ Male"],
+            ["female", "♀ Female"],
+          ] as const).map(([value, label]) => {
+            const active = profile.sex === value;
+            return (
+              <Pressable
+                key={value}
+                onPress={() => onChange({ ...profile, sex: value })}
+                accessibilityRole="button"
+                accessibilityLabel={label}
+                style={[styles.sexBtn, active && styles.sexBtnActive]}
+              >
+                <Text style={[styles.sexBtnText, active && styles.sexBtnTextActive]}>{label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
 
       <View style={styles.sleepCard}>
@@ -117,8 +160,9 @@ export function ProfileScreen({
       </View>
 
       <Text style={styles.summary}>
-        {theme.icon} {theme.label} · MaxHR {Math.round(maxHr(profile.age))} · HRR {Math.round(hrr(profile))}
+        {theme.icon} {theme.label} · MaxHR {Math.round(maxHr(profile.age, profile.sex))} · HRR {Math.round(hrr(profile))}
       </Text>
+      <Text style={styles.summary}>🔥 Fatmax target ≈ {Math.round(fatmaxHr(profile))} bpm (keep here to burn fat fastest)</Text>
 
       <Pressable
         onPress={onDone}
@@ -147,6 +191,12 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", gap: 12 },
   card: { flex: 1, backgroundColor: "#16213A", borderRadius: 16, padding: 16, gap: 8, alignItems: "center" },
   sleepCard: { backgroundColor: "#16213A", borderRadius: 16, padding: 16, gap: 10 },
+  sexCard: { backgroundColor: "#16213A", borderRadius: 16, padding: 16, gap: 10 },
+  sexRow: { flexDirection: "row", gap: 12 },
+  sexBtn: { flex: 1, minHeight: 44, borderRadius: 12, backgroundColor: "#0B1220", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#334155" },
+  sexBtnActive: { backgroundColor: "#0E7C7B", borderColor: "#0E7C7B" },
+  sexBtnText: { color: "#94A3B8", fontSize: 15, fontWeight: "600" },
+  sexBtnTextActive: { color: "#fff" },
   cardLabel: { color: "#94A3B8", fontSize: 14, fontWeight: "600" },
   stepRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 16 },
   stepBtn: { minWidth: 44, minHeight: 44, borderRadius: 12, backgroundColor: "#0B1220", alignItems: "center", justifyContent: "center" },

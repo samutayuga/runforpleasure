@@ -36,6 +36,17 @@ export class ReplayEngine {
     this.elapsedMs = 0;
   }
 
+  // Jump to a fraction (0..1) of the run's total time. Lets a slider scrub the
+  // runner anywhere along the track without waiting for playback.
+  seekToFraction(fraction: number): void {
+    const f = Math.min(1, Math.max(0, fraction));
+    this.elapsedMs = f * this.totalMs;
+  }
+
+  get progress(): number {
+    return this.totalMs > 0 ? this.elapsedMs / this.totalMs : 0;
+  }
+
   advance(realDeltaMs: number): void {
     if (!this._playing) return;
     this.elapsedMs = Math.min(this.totalMs, this.elapsedMs + realDeltaMs * this.speed);

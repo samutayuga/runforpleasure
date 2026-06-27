@@ -16,6 +16,7 @@ import { ZONE_THEME } from "./theme";
 import MapView from "./MapView";
 import { Dashboard } from "./Dashboard";
 import { ElevationProfile } from "./ElevationProfile";
+import { TimeSlider } from "./TimeSlider";
 import { loadSampleGpx } from "./loadSampleGpx";
 import { pickMultipleGpx } from "./pickGpx";
 import { RoutesPanel } from "./RoutesPanel";
@@ -241,6 +242,20 @@ export function RunScreen({ profile }: { profile: Profile }): React.JSX.Element 
           profile={profile}
           progressIndex={engine.fractionalIndex}
           width={480}
+        />
+        <TimeSlider
+          progress={engine.progress}
+          totalSec={
+            (run.points[run.points.length - 1].time.getTime() - run.points[0].time.getTime()) / 1000
+          }
+          onScrubStart={() => {
+            engine.pause();
+            force((n) => n + 1);
+          }}
+          onSeek={(f) => {
+            engine.seekToFraction(f);
+            force((n) => n + 1);
+          }}
         />
         <SurfaceStrip samples={surfaces} width={480} />
       </Surface>
