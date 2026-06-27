@@ -4,6 +4,8 @@ export interface Profile {
   age: number;
   restingHr: number;
   sleepHours?: number;
+  weightKg?: number;
+  bodyFatPct?: number;
 }
 
 export type ZoneId = "below" | "zone2" | "zone3" | "above";

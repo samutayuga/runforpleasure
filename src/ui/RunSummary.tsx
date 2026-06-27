@@ -13,8 +13,9 @@ import { DriftGauge } from "./DriftGauge";
 import { ZoneTimeline } from "./ZoneTimeline";
 import { runConclusion } from "../core/conclusion";
 import { ConclusionCard } from "./ConclusionCard";
-import { fuelSplit } from "../core/fuel";
+import { fuelSplit, fuelEnergy } from "../core/fuel";
 import { FuelSplit } from "./FuelSplit";
+import { FatLossSimulator } from "./FatLossSimulator";
 import type { TrackPoint } from "../core/types";
 import type { Profile } from "../core/karvonen";
 
@@ -47,6 +48,7 @@ export function RunSummary({
 }): React.JSX.Element {
   const conclusion = runConclusion(zones, decoupling);
   const fuel = fuelSplit(points, profile);
+  const energy = fuelEnergy(points, cumulative, profile);
   const readiness = readinessFactor(profile.sleepHours);
   return (
     <ScrollView contentContainerStyle={styles.wrap}>
@@ -96,7 +98,26 @@ export function RunSummary({
       <View style={styles.fuelWrap}>
         <Text style={styles.fuelTitle}>Fuel mix · fat vs carbs</Text>
         <FuelSplit fuel={fuel} />
+        {energy ? (
+          <>
+            <View style={styles.energyRow}>
+              <Text style={styles.energyStat}>🔥 {Math.round(energy.totalKcal)} kcal</Text>
+              <Text style={styles.energyStat}>🥑 {Math.round(energy.fatGrams)} g fat</Text>
+              <Text style={styles.energyStat}>🍞 {Math.round(energy.carbGrams)} g carbs</Text>
+            </View>
+            {energy.knownSec > 0 ? (
+              <Text style={styles.energyHint}>
+                ⚡ {(energy.fatGrams / (energy.knownSec / 60)).toFixed(2)} g/min avg · 🏔️{" "}
+                {energy.peakFatGramsPerMin.toFixed(2)} g/min peak
+              </Text>
+            ) : null}
+          </>
+        ) : (
+          <Text style={styles.energyHint}>Set your weight in profile to see calories burned.</Text>
+        )}
       </View>
+
+      <FatLossSimulator points={points} cumulative={cumulative} profile={profile} />
 
       {insights.map((ins, i) => (
         <View key={i} style={[styles.insight, { borderLeftColor: SEVERITY_COLOR[ins.severity] }]}>
@@ -127,6 +148,9 @@ const styles = StyleSheet.create({
   driftHintText: { fontSize: 13, color: "#94A3B8" },
   fuelWrap: { gap: 8 },
   fuelTitle: { fontSize: 14, fontWeight: "600", color: "#F1F5F9" },
+  energyRow: { flexDirection: "row", gap: 16, justifyContent: "center" },
+  energyStat: { fontSize: 13, fontWeight: "600", color: "#CBD5E1" },
+  energyHint: { fontSize: 12, color: "#94A3B8", textAlign: "center" },
   insight: { borderLeftWidth: 4, paddingLeft: 12, paddingVertical: 6, gap: 2 },
   insightHead: { fontSize: 15, fontWeight: "700", color: "#F1F5F9" },
   insightDetail: { fontSize: 13, color: "#94A3B8" },

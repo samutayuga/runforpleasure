@@ -1,5 +1,15 @@
 import { describe, it, expect } from "vitest";
-import { fatFraction, intensityFromHr, fuelSplit } from "../fuel";
+import {
+  fatFraction,
+  intensityFromHr,
+  fuelSplit,
+  fuelEnergy,
+  fatmaxHr,
+  sleepFatFactor,
+  fatMassGrams,
+  fatLossPlan,
+  dynamicFatLossPlan,
+} from "../fuel";
 import type { Profile } from "../karvonen";
 import type { TrackPoint } from "../types";
 
@@ -89,5 +99,141 @@ describe("intensityFromHr under low sleep", () => {
     const rested = intensityFromHr(150, profile)!;
     const tired = intensityFromHr(150, { ...profile, sleepHours: 4 })!;
     expect(tired).toBeLessThan(rested);
+  });
+});
+
+const heavy: Profile = { age: 30, restingHr: 60, weightKg: 70 };
+
+describe("fuelEnergy", () => {
+  it("returns null without a usable body weight", () => {
+    expect(fuelEnergy([tp(0, 150), tp(60, 150)], [0, 1000], profile)).toBeNull();
+    expect(fuelEnergy([tp(0, 150), tp(60, 150)], [0, 1000], { ...heavy, weightKg: 0 })).toBeNull();
+  });
+
+  it("computes total kcal from distance × weight", () => {
+    // 1 km at 70 kg: 1.036 * 70 * 1 = 72.52 kcal
+    const r = fuelEnergy([tp(0, 150), tp(60, 150)], [0, 1000], heavy)!;
+    expect(r.totalKcal).toBeCloseTo(72.52, 2);
+    expect(r.knownSec).toBe(60);
+  });
+
+  it("splits kcal into fat/carb by the interval fat fraction and converts to grams", () => {
+    const fat = fatFraction(intensityFromHr(150, profile)!);
+    const r = fuelEnergy([tp(0, 150), tp(60, 150)], [0, 1000], heavy)!;
+    expect(r.fatKcal).toBeCloseTo(fat * 72.52, 2);
+    expect(r.carbKcal).toBeCloseTo((1 - fat) * 72.52, 2);
+    expect(r.fatKcal + r.carbKcal).toBeCloseTo(r.totalKcal, 4); // all HR known
+    expect(r.fatGrams).toBeCloseTo(r.fatKcal / 9, 4);
+    expect(r.carbGrams).toBeCloseTo(r.carbKcal / 4, 4);
+  });
+
+  it("counts no-HR intervals as unknown energy: in total but not in fat/carb", () => {
+    const r = fuelEnergy([tp(0, null), tp(60, 150)], [0, 1000], heavy)!;
+    expect(r.totalKcal).toBeCloseTo(72.52, 2);
+    expect(r.unknownSec).toBe(60);
+    expect(r.knownSec).toBe(0);
+    expect(r.fatKcal).toBe(0);
+    expect(r.carbKcal).toBe(0);
+  });
+
+  it("burns more fat grams on an easy run than a hard one over the same distance", () => {
+    const easy = fuelEnergy([tp(0, 120), tp(60, 120)], [0, 1000], heavy)!;
+    const hard = fuelEnergy([tp(0, 175), tp(60, 175)], [0, 1000], heavy)!;
+    expect(easy.fatGrams).toBeGreaterThan(hard.fatGrams);
+  });
+
+  it("reports the peak fat-burn rate; equal to the average on a uniform run", () => {
+    const r = fuelEnergy([tp(0, 150), tp(60, 150)], [0, 1000], heavy)!;
+    const avg = r.fatGrams / (r.knownSec / 60);
+    expect(r.peakFatGramsPerMin).toBeCloseTo(avg, 6);
+  });
+
+  it("peak >= average when one interval burns fat faster than the rest", () => {
+    // interval 0: 60s, 1000 m (fast, fat-rich at easy HR) ; interval 1: 60s, 100 m (slow)
+    const pts = [tp(0, 130), tp(60, 130), tp(120, 130)];
+    const r = fuelEnergy(pts, [0, 1000, 1100], heavy)!;
+    const avg = r.fatGrams / (r.knownSec / 60);
+    expect(r.peakFatGramsPerMin).toBeGreaterThan(avg);
+  });
+});
+
+describe("fatmaxHr", () => {
+  it("targets the top of Zone 2 — between z2 and z3 boundaries", () => {
+    // z2 = 0.6*131.8+60 = 139.08 ; z3 = 0.7*131.8+60 = 152.26
+    const hr = fatmaxHr(profile);
+    expect(hr).toBeGreaterThan(139);
+    expect(hr).toBeLessThan(153);
+  });
+});
+
+describe("sleepFatFactor", () => {
+  it("is full (1.0) when well rested or sleep unknown", () => {
+    expect(sleepFatFactor(undefined)).toBe(1);
+    expect(sleepFatFactor(8)).toBe(1);
+    expect(sleepFatFactor(7)).toBe(1);
+  });
+  it("penalises poor sleep, floored at 0.8", () => {
+    expect(sleepFatFactor(5.5)).toBeCloseTo(0.9, 6); // midpoint of 4..7
+    expect(sleepFatFactor(4)).toBeCloseTo(0.8, 6);
+    expect(sleepFatFactor(2)).toBeCloseTo(0.8, 6); // floor
+  });
+});
+
+describe("fuelEnergy sleep coupling (physiology-correct)", () => {
+  it("burns more fat on the same run after a good night's sleep", () => {
+    const pts = [tp(0, 145), tp(60, 145)];
+    const rested = fuelEnergy(pts, [0, 1000], { ...heavy, sleepHours: 8 })!;
+    const tired = fuelEnergy(pts, [0, 1000], { ...heavy, sleepHours: 4 })!;
+    expect(rested.fatGrams).toBeGreaterThan(tired.fatGrams);
+  });
+  it("burns more fat at higher body weight over the same distance", () => {
+    const pts = [tp(0, 145), tp(60, 145)];
+    const heavier = fuelEnergy(pts, [0, 1000], { ...heavy, weightKg: 90 })!;
+    const lighter = fuelEnergy(pts, [0, 1000], { ...heavy, weightKg: 60 })!;
+    expect(heavier.fatGrams).toBeGreaterThan(lighter.fatGrams);
+  });
+});
+
+describe("fatMassGrams", () => {
+  it("is weight × body-fat fraction, in grams", () => {
+    expect(fatMassGrams(70, 25)).toBeCloseTo(70 * 0.25 * 1000, 3); // 17500 g
+  });
+});
+
+describe("fatLossPlan", () => {
+  it("counts runs (ceil) and weeks to burn the target fat", () => {
+    const p = fatLossPlan(2100, 20, 4); // 2100 g target, 20 g/run, 4 runs/wk
+    expect(p.runs).toBe(105);
+    expect(p.weeks).toBeCloseTo(26.25, 4);
+  });
+  it("returns Infinity when nothing is burned per run", () => {
+    const p = fatLossPlan(2100, 0, 4);
+    expect(p.runs).toBe(Infinity);
+    expect(p.weeks).toBe(Infinity);
+  });
+});
+
+describe("dynamicFatLossPlan", () => {
+  it("needs at least as many runs as the static plan (burn slows as weight drops)", () => {
+    const target = 2100;
+    const stat = fatLossPlan(target, 20, 4);
+    const dyn = dynamicFatLossPlan(target, 20, 70, 4);
+    expect(dyn.runs).toBeGreaterThanOrEqual(stat.runs);
+    expect(dyn.endWeightKg).toBeLessThan(70);
+    expect(dyn.endWeightKg).toBeGreaterThan(60);
+  });
+
+  it("loses exactly the burned fat from body weight", () => {
+    // small target hit in one run: 20 g burned -> 0.02 kg off
+    const dyn = dynamicFatLossPlan(10, 20, 70, 4);
+    expect(dyn.runs).toBe(1);
+    expect(dyn.endWeightKg).toBeCloseTo(70 - 20 / 1000, 6);
+  });
+
+  it("returns Infinity when nothing is burned per run", () => {
+    const dyn = dynamicFatLossPlan(2100, 0, 70, 4);
+    expect(dyn.runs).toBe(Infinity);
+    expect(dyn.weeks).toBe(Infinity);
+    expect(dyn.endWeightKg).toBe(70);
   });
 });

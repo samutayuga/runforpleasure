@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
 import type { Profile } from "../core/karvonen";
 import { maxHr, hrr } from "../core/karvonen";
+import { fatmaxHr } from "../core/fuel";
 import { readinessFactor, readinessLevel } from "../core/readiness";
 import { READINESS_THEME } from "./theme";
 
@@ -61,6 +62,8 @@ export function ProfileScreen({
   onDone: () => void;
 }): React.JSX.Element {
   const sleep = profile.sleepHours ?? 8;
+  const weight = profile.weightKg ?? 70;
+  const bodyFat = profile.bodyFatPct ?? 25;
   const factor = readinessFactor(profile.sleepHours);
   const theme = READINESS_THEME[readinessLevel(factor)];
   const barFraction = clamp(0, 1, (factor - 0.9) / 0.1);
@@ -83,6 +86,23 @@ export function ProfileScreen({
           value={String(profile.restingHr)}
           unit="bpm"
           onStep={(d) => onChange({ ...profile, restingHr: clamp(30, 110, profile.restingHr + d) })}
+        />
+      </View>
+
+      <View style={styles.row}>
+        <StatStepper
+          icon="⚖️"
+          label="Weight"
+          value={String(weight)}
+          unit="kg"
+          onStep={(d) => onChange({ ...profile, weightKg: clamp(30, 200, weight + d) })}
+        />
+        <StatStepper
+          icon="📊"
+          label="Body fat"
+          value={String(bodyFat)}
+          unit="% (test)"
+          onStep={(d) => onChange({ ...profile, bodyFatPct: clamp(3, 60, bodyFat + d) })}
         />
       </View>
 
@@ -119,6 +139,7 @@ export function ProfileScreen({
       <Text style={styles.summary}>
         {theme.icon} {theme.label} · MaxHR {Math.round(maxHr(profile.age))} · HRR {Math.round(hrr(profile))}
       </Text>
+      <Text style={styles.summary}>🔥 Fatmax target ≈ {Math.round(fatmaxHr(profile))} bpm (keep here to burn fat fastest)</Text>
 
       <Pressable
         onPress={onDone}
